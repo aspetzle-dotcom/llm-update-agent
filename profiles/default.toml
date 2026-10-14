@@ -1,0 +1,25 @@
+schema_version = "1"
+
+depth = "Explain LLM systems terms; assume Python and mathematics familiarity."
+reading_minutes = 10
+excluded_topics = []
+concepts_to_revisit = ["context selection", "retrieval evaluation"]
+
+[topics.context]
+weight = 1.3
+keywords = ["context window", "context engineering", "context selection", "long context", "compaction"]
+[topics.retrieval]
+weight = 1.2
+keywords = ["retrieval", "RAG", "reranking", "embedding"]
+[topics.evaluation]
+weight = 1.2
+keywords = ["evaluation", "evals", "benchmark", "grounding"]
+[topics.inference]
+weight = 1.1
+keywords = ["inference", "KV cache", "quantization", "batching", "speculative decoding"]
+[topics.tools]
+weight = 1.0
+keywords = ["tool use", "tool calling", "function calling", "structured output"]
+[topics.libraries]
+weight = 0.8
+keywords = ["transformers", "vllm", "llama.cpp", "langgraph", "breaking change"]

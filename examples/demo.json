@@ -1,0 +1,435 @@
+{
+  "cost": {
+    "accounted_usd": 0.0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "uncertain_calls": 0
+  },
+  "coverage": {
+    "checked": 8,
+    "failed": [],
+    "incomplete": [],
+    "sources": [
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "Anthropic Engineering",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "anthropic-engineering",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 3,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "arXiv cs.CL",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "arxiv-cl",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 5,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "arXiv cs.LG",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "arxiv-lg",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "LangGraph releases",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "github-langgraph",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "llama.cpp releases",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "github-llamacpp",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "Transformers releases",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "github-transformers",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "vLLM releases",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "github-vllm",
+        "status": "succeeded",
+        "warnings": []
+      },
+      {
+        "cursor_after": null,
+        "cursor_before": null,
+        "error_code": null,
+        "fetched_count": 2,
+        "last_attempt_at": "2026-10-14T20:34:37+00:00",
+        "last_success_at": "2026-10-14T20:34:37+00:00",
+        "name": "OpenAI News",
+        "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+        "source_id": "openai-news",
+        "status": "succeeded",
+        "warnings": []
+      }
+    ],
+    "succeeded": 8
+  },
+  "digest_id": "digest_0022794b5a1d46621c16623a4f7792b7",
+  "entries": [
+    {
+      "claims": [
+        {
+          "evidence_ids": [
+            "ev_d51d749d7cc390fd061acfc0255c5e18"
+          ],
+          "kind": "source_fact",
+          "numeric_context": [],
+          "schema_version": "1",
+          "text": "This synthetic engineering article describes context engineering. Compaction retains evidence identifiers and unresolved questions; original passages remain in storage for retrieval."
+        }
+      ],
+      "concept_explanation": "",
+      "content_scope": "article-body",
+      "date": "2026-10-13T12:00:00+00:00",
+      "date_basis": "publisher",
+      "entry_id": "entry_7066bfa111b716d72e98dcb9b871102a",
+      "evidence": [
+        {
+          "end_char": 182,
+          "evidence_id": "ev_d51d749d7cc390fd061acfc0255c5e18",
+          "locator": "chars:0-182;article-body",
+          "passage_hash": "20a1898afef1b39d290f1be5f96f3f0ac86db3323b2cbcf8bcadbeb89a999efa",
+          "passage_text": "This synthetic engineering article describes context engineering. Compaction retains evidence identifiers and unresolved questions; original passages remain in storage for retrieval.",
+          "start_char": 0,
+          "version_id": "version_893501bd9b4e9d52c0264db748620f35"
+        }
+      ],
+      "experiment": null,
+      "is_update": false,
+      "item_id": "item_870e976dc8269324acb9bb088fa927b8",
+      "scores": {
+        "correction": false,
+        "date": "2026-10-13T12:00:00+00:00",
+        "date_basis": "publisher",
+        "exclusion_reason": null,
+        "final_score": 0.9805904549193216,
+        "is_update": false,
+        "novelty": 1.0,
+        "recency": 0.9516951530106196,
+        "relevance": 0.9866666666666667,
+        "topics": [
+          "context",
+          "retrieval"
+        ]
+      },
+      "story_id": "story_5c9662e9f7f4f11000ff938f8dc269cd",
+      "title": "[Synthetic] Context engineering and compaction",
+      "topics": [
+        "context",
+        "retrieval"
+      ],
+      "uncertainties": [
+        "Source excerpt only; no independent verification or model explanation."
+      ],
+      "url": "https://example.org/synthetic/8",
+      "version_id": "version_893501bd9b4e9d52c0264db748620f35",
+      "what_changed": "This synthetic engineering article describes context engineering. Compaction retains evidence identifiers and unresolved questions; original passages remain in storage for retrieval.",
+      "why_relevant": ""
+    },
+    {
+      "claims": [
+        {
+          "evidence_ids": [
+            "ev_d3eef6f7f44cd1ee9b667a916bca0a56"
+          ],
+          "kind": "source_fact",
+          "numeric_context": [],
+          "schema_version": "1",
+          "text": "This fictional software update adds inference failure diagnostics and preserves request identifiers for evaluation."
+        }
+      ],
+      "concept_explanation": "",
+      "content_scope": "release-notes-only",
+      "date": "2026-10-13T12:00:00+00:00",
+      "date_basis": "publisher",
+      "entry_id": "entry_65fe501447e6c9b7b8366f513d20cbeb",
+      "evidence": [
+        {
+          "end_char": 115,
+          "evidence_id": "ev_d3eef6f7f44cd1ee9b667a916bca0a56",
+          "locator": "chars:0-115;release-notes-only",
+          "passage_hash": "93ecf9bc30aae19145324b2b3a4d23d2fbc02c8af957de5b6ea2dd91486e830b",
+          "passage_text": "This fictional software update adds inference failure diagnostics and preserves request identifiers for evaluation.",
+          "start_char": 0,
+          "version_id": "version_8de43cbb68d755f67b1b0317e26a338c"
+        }
+      ],
+      "experiment": null,
+      "is_update": false,
+      "item_id": "item_5f9e50ebed7e4e4637fb632354b11753",
+      "scores": {
+        "correction": false,
+        "date": "2026-10-13T12:00:00+00:00",
+        "date_basis": "publisher",
+        "exclusion_reason": null,
+        "final_score": 0.9384237882526549,
+        "is_update": false,
+        "novelty": 1.0,
+        "recency": 0.9516951530106196,
+        "relevance": 0.91,
+        "topics": [
+          "evaluation",
+          "inference"
+        ]
+      },
+      "story_id": "story_7744f21fb838bb2e120eed0ed9406aa5",
+      "title": "[Synthetic] Inference failure diagnostics",
+      "topics": [
+        "evaluation",
+        "inference"
+      ],
+      "uncertainties": [
+        "Source excerpt only; no independent verification or model explanation."
+      ],
+      "url": "https://example.org/synthetic/12",
+      "version_id": "version_8de43cbb68d755f67b1b0317e26a338c",
+      "what_changed": "This fictional software update adds inference failure diagnostics and preserves request identifiers for evaluation.",
+      "why_relevant": ""
+    },
+    {
+      "claims": [
+        {
+          "evidence_ids": [
+            "ev_ffe4285e802f23f95b64c77cb0d62f26"
+          ],
+          "kind": "source_fact",
+          "numeric_context": [],
+          "schema_version": "1",
+          "text": "This synthetic note compares context selection with a fixed document prefix. Retrieval selects passages for the prompt; context window capacity alone does not determine which passages are useful."
+        }
+      ],
+      "concept_explanation": "",
+      "content_scope": "abstract-only",
+      "date": "2026-10-10T12:00:00+00:00",
+      "date_basis": "publisher",
+      "entry_id": "entry_205a489856bc6a5e64d02dcd13913a5b",
+      "evidence": [
+        {
+          "end_char": 195,
+          "evidence_id": "ev_ffe4285e802f23f95b64c77cb0d62f26",
+          "locator": "chars:0-195;abstract-only",
+          "passage_hash": "8cd58b3dd932007b5759512bae966e3ca2bf6521557e42cd4365d37cfc196a33",
+          "passage_text": "This synthetic note compares context selection with a fixed document prefix. Retrieval selects passages for the prompt; context window capacity alone does not determine which passages are useful.",
+          "start_char": 0,
+          "version_id": "version_477494053d1a7009e4e86aa0e1b6de78"
+        }
+      ],
+      "experiment": null,
+      "is_update": false,
+      "item_id": "item_82454979cbe52972003e1d73266e28d3",
+      "scores": {
+        "correction": false,
+        "date": "2026-10-10T12:00:00+00:00",
+        "date_basis": "publisher",
+        "exclusion_reason": null,
+        "final_score": 0.9194433619633036,
+        "is_update": false,
+        "novelty": 1.0,
+        "recency": 0.7071067811865476,
+        "relevance": 0.9866666666666667,
+        "topics": [
+          "context",
+          "retrieval"
+        ]
+      },
+      "story_id": "story_c169d91d343dcd9978a50b2f84b63af5",
+      "title": "[Synthetic] Context selection with retrieved passages",
+      "topics": [
+        "context",
+        "retrieval"
+      ],
+      "uncertainties": [
+        "Source excerpt only; no independent verification or model explanation."
+      ],
+      "url": "https://example.org/synthetic/1",
+      "version_id": "version_477494053d1a7009e4e86aa0e1b6de78",
+      "what_changed": "This synthetic note compares context selection with a fixed document prefix. Retrieval selects passages for the prompt; context window capacity alone does not determine which passages are useful.",
+      "why_relevant": ""
+    },
+    {
+      "claims": [
+        {
+          "evidence_ids": [
+            "ev_674d04e18ed448048b25860bfa3cd243"
+          ],
+          "kind": "source_fact",
+          "numeric_context": [],
+          "schema_version": "1",
+          "text": "This synthetic paper proposes a retrieval evaluation checklist. It separates document relevance from answer grounding and records cases where retrieved passages disagree."
+        }
+      ],
+      "concept_explanation": "",
+      "content_scope": "abstract-only",
+      "date": "2026-10-11T12:00:00+00:00",
+      "date_basis": "publisher",
+      "entry_id": "entry_37d7f9e5aa3fb6f8c9b3b5d1569057f0",
+      "evidence": [
+        {
+          "end_char": 170,
+          "evidence_id": "ev_674d04e18ed448048b25860bfa3cd243",
+          "locator": "chars:0-170;abstract-only",
+          "passage_hash": "6746912ff912264f5f7953a53920db62948aa761cd54eb928623da348f8181f1",
+          "passage_text": "This synthetic paper proposes a retrieval evaluation checklist. It separates document relevance from answer grounding and records cases where retrieved passages disagree.",
+          "start_char": 0,
+          "version_id": "version_802a2577b876578c38535290d546d23d"
+        }
+      ],
+      "experiment": null,
+      "is_update": false,
+      "item_id": "item_78701135d097afce3d65d44a15aaf74d",
+      "scores": {
+        "correction": false,
+        "date": "2026-10-11T12:00:00+00:00",
+        "date_basis": "publisher",
+        "exclusion_reason": null,
+        "final_score": 0.9011772955389274,
+        "is_update": false,
+        "novelty": 1.0,
+        "recency": 0.7807091821557101,
+        "relevance": 0.9199999999999999,
+        "topics": [
+          "retrieval",
+          "evaluation"
+        ]
+      },
+      "story_id": "story_63b7b7c8aeaf0533adb2dcf1e08427f3",
+      "title": "[Synthetic] A retrieval evaluation checklist",
+      "topics": [
+        "retrieval",
+        "evaluation"
+      ],
+      "uncertainties": [
+        "Source excerpt only; no independent verification or model explanation."
+      ],
+      "url": "https://example.org/synthetic/2",
+      "version_id": "version_802a2577b876578c38535290d546d23d",
+      "what_changed": "This synthetic paper proposes a retrieval evaluation checklist. It separates document relevance from answer grounding and records cases where retrieved passages disagree.",
+      "why_relevant": ""
+    },
+    {
+      "claims": [
+        {
+          "evidence_ids": [
+            "ev_3c8193c5eade13e9ad45affd3ac45441"
+          ],
+          "kind": "source_fact",
+          "numeric_context": [],
+          "schema_version": "1",
+          "text": "This synthetic evaluation note has an unknown publication date. Collection records a visible first-seen fallback."
+        }
+      ],
+      "concept_explanation": "",
+      "content_scope": "article-body",
+      "date": "2026-10-13T18:00:00+00:00",
+      "date_basis": "first_seen",
+      "entry_id": "entry_0d13b4415cf5474303f70728841af2e1",
+      "evidence": [
+        {
+          "end_char": 113,
+          "evidence_id": "ev_3c8193c5eade13e9ad45affd3ac45441",
+          "locator": "chars:0-113;article-body",
+          "passage_hash": "1dca646c0dde236c008297d332b264247e1af7a31d97a0faf46621d48105d042",
+          "passage_text": "This synthetic evaluation note has an unknown publication date. Collection records a visible first-seen fallback.",
+          "start_char": 0,
+          "version_id": "version_c8acf5e34437e23d8e642f1e1ba5fc62"
+        }
+      ],
+      "experiment": null,
+      "is_update": false,
+      "item_id": "item_6dba5290cdecd7ba86d009b2a18514ab",
+      "scores": {
+        "correction": false,
+        "date": "2026-10-13T18:00:00+00:00",
+        "date_basis": "first_seen",
+        "exclusion_reason": null,
+        "final_score": 0.8838871605131433,
+        "is_update": false,
+        "novelty": 1.0,
+        "recency": 0.9755486420525732,
+        "relevance": 0.7999999999999999,
+        "topics": [
+          "evaluation"
+        ]
+      },
+      "story_id": "story_73056a7ec1dfc732efe9509ab64bd8c5",
+      "title": "[Synthetic] Evaluation without a publication date",
+      "topics": [
+        "evaluation"
+      ],
+      "uncertainties": [
+        "Source excerpt only; no independent verification or model explanation."
+      ],
+      "url": "https://example.org/synthetic/15",
+      "version_id": "version_c8acf5e34437e23d8e642f1e1ba5fc62",
+      "what_changed": "This synthetic evaluation note has an unknown publication date. Collection records a visible first-seen fallback.",
+      "why_relevant": ""
+    }
+  ],
+  "limitations": [
+    "Synthetic offline fixtures; these are fictional updates, not current news."
+  ],
+  "mode": "baseline",
+  "requested_mode": "baseline",
+  "run_id": "run_b92ec4731f6750d357da37f73ab36fa4",
+  "schema_version": "1",
+  "source_set_version": "2026-10-14.1",
+  "status": "succeeded",
+  "window": {
+    "since": "2026-10-07T00:00:00+00:00",
+    "until": "2026-10-14T00:00:00+00:00"
+  }
+}
