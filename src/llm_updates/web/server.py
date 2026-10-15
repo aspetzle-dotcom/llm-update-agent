@@ -12,10 +12,11 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from ..locking import database_lock
 from ..storage import Repository
+from .datasets import MAX_REQUEST_BYTES, DatasetStore
 from .pages import LABELS, render
 
 STATIC_TYPES = {
@@ -95,6 +96,18 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(HTTPStatus.FORBIDDEN, b"forbidden", "text/plain")
         path = urlsplit(self.path).path
+        if path == "/api/datasets":
+            try:
+                dataset_id = parse_qs(urlsplit(self.path).query).get("id", [None])[0]
+                store = DatasetStore(self.server.database)
+                if dataset_id is None:
+                    return self._json(HTTPStatus.OK, store.list())
+                text = store.get(dataset_id)
+                if text is None:
+                    return self._json(HTTPStatus.NOT_FOUND, {"error": "Dataset not found."})
+                return self._send(HTTPStatus.OK, text.encode("utf-8"), "text/csv; charset=utf-8")
+            except ValueError as exc:
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
         if path.startswith("/static/"):
             name = path.removeprefix("/static/")
             body = self.server.assets.get(name)
@@ -122,7 +135,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(HTTPStatus.FORBIDDEN, {"error": "cross-origin request"})
         if self.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
             return self._json(HTTPStatus.FORBIDDEN, {"error": "cross-site request"})
-        if urlsplit(self.path).path != "/api/feedback":
+        if urlsplit(self.path).path == "/api/datasets":
+            return self._datasets_write()
+        if self.command == "DELETE" or urlsplit(self.path).path != "/api/feedback":
             return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
         if self.headers.get_content_type() != "application/json":
             return self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "expected JSON"})
@@ -155,6 +170,32 @@ class Handler(BaseHTTPRequestHandler):
             status = HTTPStatus.CONFLICT if "another process" in str(exc) else HTTPStatus.NOT_FOUND
             return self._json(status, {"error": str(exc)})
         self._json(HTTPStatus.OK, result)
+
+    def do_DELETE(self):
+        # Use the same Host, Origin and Fetch Metadata checks as feedback writes.
+        self.do_POST()
+
+    def _datasets_write(self):
+        store = DatasetStore(self.server.database)
+        try:
+            if self.command == "DELETE":
+                dataset_id = parse_qs(urlsplit(self.path).query).get("id", [""])[0]
+                store.delete(dataset_id)
+                return self._json(HTTPStatus.OK, {"ok": True})
+            if self.headers.get_content_type() != "application/json":
+                return self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "Expected JSON."})
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= MAX_REQUEST_BYTES:
+                return self._json(
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "Upload too large."}
+                )
+            data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict):
+                raise ValueError("Expected an upload object.")
+            item = store.upload(data.get("name"), data.get("csv"))
+            return self._json(HTTPStatus.OK, item)
+        except (ValueError, TypeError) as exc:
+            return self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
 
 
 class Server(ThreadingHTTPServer):

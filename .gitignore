@@ -14,3 +14,7 @@ data/
 *.sqlite3-*
 build/
 dist/
+
+# Optional Fieldnotes frontend build dependencies
+frontend/node_modules/
+*.workspace.sqlite3*

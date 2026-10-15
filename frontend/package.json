@@ -1,0 +1,17 @@
+{
+  "name": "fieldnotes-dataset-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild main.tsx --bundle --minify --jsx=automatic --target=es2020 --outfile=../src/llm_updates/web/static/datasets.js",
+    "test": "node --experimental-strip-types --test data-tools.test.ts"
+  },
+  "dependencies": {
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "lucide-react": "1.31.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.0"
+  }
+}
