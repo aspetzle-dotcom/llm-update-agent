@@ -239,21 +239,34 @@ class Coordinator:
                     deadline, time.monotonic() + self.config.limits.source_timeout_seconds
                 )
                 fetcher = self.fetcher_factory(self.config, self.repo, source_deadline)
-                source_since = since
-                last = self.repo.one(
-                    "SELECT last_success_at FROM sources WHERE source_id=?", (source.source_id,)
-                )
-                if last["last_success_at"] and not state["cursor_after"]:
-                    overlap = datetime.fromisoformat(last["last_success_at"]) - timedelta(
-                        hours=self.config.limits.overlap_hours
+                source_since = state["window_since"]
+                source_until = state["window_until"] or until
+                if source_since is None:
+                    source_since = since
+                    # Only reuse coverage that includes the requested start. A
+                    # disjoint historical collection cannot establish a watermark.
+                    last = self.repo.one(
+                        """SELECT MAX(window_until) AS covered_until FROM source_runs
+                        WHERE source_id=? AND status='succeeded' AND run_id!=?
+                        AND window_since<=? AND window_until>?""",
+                        (source.source_id, rid, since, since),
                     )
-                    if datetime.fromisoformat(since) < overlap < datetime.fromisoformat(until):
-                        source_since = overlap.isoformat()
+                    if last["covered_until"]:
+                        overlap = datetime.fromisoformat(last["covered_until"]) - timedelta(
+                            hours=self.config.limits.overlap_hours
+                        )
+                        if datetime.fromisoformat(since) < overlap < datetime.fromisoformat(until):
+                            source_since = overlap.isoformat()
+                    with self.repo.db:
+                        self.repo.db.execute(
+                            "UPDATE source_runs SET window_since=?,window_until=? WHERE run_id=? AND source_id=?",
+                            (source_since, source_until, rid, source.source_id),
+                        )
                 for result, terminal in pages(
                     source,
                     fetcher,
                     source_since,
-                    until,
+                    source_until,
                     self.config.limits.candidates_per_source,
                     state["cursor_after"],
                     state["fetched_count"],

@@ -19,7 +19,7 @@ class Repository:
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA journal_mode=WAL")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 2:
+        if version > 3:
             raise ValueError("database schema is newer than this application")
         if version == 0:
             sql = Path(__file__).with_name("001_initial.sql").read_text(encoding="utf-8")
@@ -29,6 +29,9 @@ class Repository:
                 Path(__file__).with_name("002_immutable_snapshots.sql").read_text(encoding="utf-8")
             )
             self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=2;\nCOMMIT;")
+        if version < 3:
+            sql = Path(__file__).with_name("003_collection_state.sql").read_text(encoding="utf-8")
+            self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=3;\nCOMMIT;")
 
     def close(self):
         self.db.close()
@@ -175,7 +178,8 @@ class Repository:
         exists = self.one("SELECT version_id FROM versions WHERE version_id=?", (vid,))
         if not exists:
             previous = self.one(
-                "SELECT * FROM versions WHERE item_id=? ORDER BY rowid DESC LIMIT 1", (iid,)
+                "SELECT v.* FROM versions v JOIN current_versions c USING(item_id,version_id) WHERE v.item_id=?",
+                (iid,),
             )
             if previous and previous["extractor_version"] != "1":
                 raise ValueError("extractor migration required")
@@ -237,16 +241,20 @@ class Repository:
                     ),
                 )
                 start = end
-            self.db.execute(
-                "UPDATE items SET title=?,status=?,published_at=?,date_basis=? WHERE item_id=?",
-                (
-                    item.title,
-                    "withdrawn" if item.withdrawn else "active",
-                    item.published_at,
-                    "publisher" if item.published_at else "first_seen",
-                    iid,
-                ),
-            )
+        self.db.execute(
+            "INSERT INTO current_versions VALUES(?,?) ON CONFLICT(item_id) DO UPDATE SET version_id=excluded.version_id",
+            (iid, vid),
+        )
+        self.db.execute(
+            "UPDATE items SET title=?,status=?,published_at=?,date_basis=? WHERE item_id=?",
+            (
+                item.title,
+                "withdrawn" if item.withdrawn else "active",
+                item.published_at,
+                "publisher" if item.published_at else "first_seen",
+                iid,
+            ),
+        )
         story = self.one("SELECT story_id FROM story_members WHERE item_id=?", (iid,))
         if not story:
             sid = uid("story", iid)
@@ -298,7 +306,11 @@ class Repository:
             )
             if terminal and result.complete:
                 self.db.execute(
-                    "UPDATE sources SET last_success_at=? WHERE source_id=?", (now(), source_id)
+                    """UPDATE sources SET last_success_at=(
+                        SELECT MAX(window_until) FROM source_runs
+                        WHERE source_id=? AND status='succeeded'
+                    ) WHERE source_id=?""",
+                    (source_id, source_id),
                 )
             self.event(
                 rid, "checkpoint", {"cursor": result.cursor, "count": len(result.items)}, source_id
@@ -318,8 +330,8 @@ class Repository:
             f"""SELECT i.*,v.version_id,v.content_hash,v.normalized_text,v.metadata_json,
           v.fetched_at,s.story_id FROM items i JOIN versions v ON v.item_id=i.item_id
           JOIN story_members s ON s.item_id=i.item_id
-          WHERE v.rowid=(SELECT MAX(v2.rowid) FROM versions v2 WHERE v2.item_id=i.item_id)
-          AND EXISTS(SELECT 1 FROM item_aliases a WHERE a.item_id=i.item_id AND a.source_id IN ({marks}))
+          JOIN current_versions cv ON cv.item_id=i.item_id AND cv.version_id=v.version_id
+          WHERE EXISTS(SELECT 1 FROM item_aliases a WHERE a.item_id=i.item_id AND a.source_id IN ({marks}))
           ORDER BY i.canonical_key""",
             enabled_sources,
         )
