@@ -1,0 +1,140 @@
+<section class="hero">
+  <p class="eyebrow">Beginner guide · 3 of 3</p>
+  <h1>Large language models</h1>
+  <p class="lede">An LLM is a transformer network trained to do one thing extremely well: predict the next token. Almost everything else it can do grows out of that.</p>
+</section>
+<div class="guide">
+<nav class="toc" aria-label="On this page">
+  <p>On this page</p>
+  <ol>
+    <li><a href="#idea">The core idea</a></li>
+    <li><a href="#tokens">Tokens</a></li>
+    <li><a href="#embeddings">Embeddings</a></li>
+    <li><a href="#attention">Attention</a></li>
+    <li><a href="#sampling">Generating text</a></li>
+    <li><a href="#training">How LLMs are trained</a></li>
+    <li><a href="#using">Using LLMs well</a></li>
+    <li><a href="#limits">Limits and risks</a></li>
+    <li><a href="#glossary">Glossary for the updates</a></li>
+  </ol>
+</nav>
+<article class="prose">
+
+<section id="idea">
+<h2>The core idea</h2>
+<p>Give the model some text and it outputs a probability for every possible next token. Pick one, add it to the text, and repeat. That loop, run thousands of times, writes essays, code and answers. To get good at predicting the next word across the whole internet, a model has to pick up grammar, facts, reasoning patterns and style along the way.</p>
+<ol class="steps">
+  <li><strong>Text</strong>“The cat sat on the”</li>
+  <li><strong>Tokens</strong>split into pieces with IDs</li>
+  <li><strong>Embeddings</strong>each ID becomes a vector</li>
+  <li><strong>Transformer layers</strong>attention + MLPs, dozens of times</li>
+  <li><strong>Next-token probabilities</strong>“mat” 41%, “floor” 22%…</li>
+</ol>
+</section>
+
+<section id="tokens">
+<h2>Tokens</h2>
+<p>Models do not read letters or whole words. They read <strong>tokens</strong>: common words get a single token, while rare words are split into pieces. Tokenizers such as BPE are learned from huge amounts of text. In English, one token is roughly ¾ of a word.</p>
+<figure class="viz card" data-viz="tokenizer">
+  <figcaption class="viz-head"><h3 class="viz-title">Toy tokenizer</h3><p class="viz-hint">Type anything. “·” marks a leading space.</p></figcaption>
+</figure>
+<p class="muted small">This is a simplified tokenizer with a tiny vocabulary, for illustration. Real ones have 50,000 to 200,000+ tokens, so they split text less.</p>
+<p>Tokens explain several quirks: pricing and <strong>context windows</strong> are counted in tokens, and models can struggle to count the letters in a word because they never see the individual letters.</p>
+</section>
+
+<section id="embeddings">
+<h2>Embeddings: meaning as position</h2>
+<p>Each token ID is turned into a long list of numbers, an <strong>embedding</strong>. Training arranges these so that related meanings end up near each other, and directions in the space can carry meaning.</p>
+<figure class="viz card" data-viz="embeddings">
+  <figcaption class="viz-head"><h3 class="viz-title">A 2-D sketch of embedding space</h3><p class="viz-hint">Hover words to see their neighbours.</p></figcaption>
+</figure>
+<p class="muted small">Positions here are hand-placed to show the idea. Real embeddings have hundreds to thousands of dimensions.</p>
+<p>The famous example: the arrow from <em>man</em> to <em>woman</em> is roughly the same as the arrow from <em>king</em> to <em>queen</em>. Embeddings also power semantic search and <strong>RAG</strong>, by finding passages whose vectors are close to a question's vector.</p>
+</section>
+
+<section id="attention">
+<h2>Attention</h2>
+<p>The breakthrough of the transformer (2017) is <strong>self-attention</strong>: every token decides how much to “look at” every earlier token and pulls in information from them. That is how the model works out that <em>it</em> refers to <em>animal</em> in one sentence and to <em>street</em> in another.</p>
+<figure class="viz card" data-viz="attention">
+  <figcaption class="viz-head"><h3 class="viz-title">What “it” attends to</h3><p class="viz-hint">Click a word. Change the last word of the sentence.</p></figcaption>
+</figure>
+<p class="muted small">Weights here are illustrative, not taken from a real model.</p>
+<p>A model has many <strong>attention heads</strong> per layer, each specialising in a different kind of relationship, and dozens of layers. Each row of the grid adds up to 100%. Future tokens are masked, so the model cannot peek at the word it is meant to predict.</p>
+</section>
+
+<section id="sampling">
+<h2>Generating text: temperature, top-k and top-p</h2>
+<p>The model gives probabilities; a <strong>sampling</strong> strategy picks the actual token.</p>
+<figure class="viz card" data-viz="sampling">
+  <figcaption class="viz-head"><h3 class="viz-title">Next-token sampling</h3><p class="viz-hint">Move the sliders, then sample.</p></figcaption>
+</figure>
+<ul>
+  <li><strong>Temperature</strong> sharpens (below 1) or flattens (above 1) the distribution. Near 0 the model almost always picks the top token: predictable. High values give more variety and more mistakes.</li>
+  <li><strong>Top-k</strong> keeps only the k most likely tokens.</li>
+  <li><strong>Top-p</strong> (nucleus sampling) keeps the smallest set of tokens whose probabilities add up to p.</li>
+</ul>
+</section>
+
+<section id="training">
+<h2>How LLMs are trained</h2>
+<ol class="steps">
+  <li><strong>Pretraining</strong>Predict the next token on trillions of tokens of text and code. Weeks on thousands of GPUs.</li>
+  <li><strong>Supervised fine-tuning</strong>Learn from curated examples of good instructions and answers.</li>
+  <li><strong>Preference tuning</strong>RLHF, DPO or similar: learn which of two answers people (or a reward model) prefer.</li>
+  <li><strong>RL for reasoning</strong>Reward correct final answers on maths, code and tasks so the model learns to think step by step.</li>
+  <li><strong>Evaluation and safety</strong>Benchmarks, red-teaming and policy testing before release.</li>
+</ol>
+<p><strong>Scaling laws</strong> describe how loss falls predictably as you add parameters, data and compute. That is why labs keep building bigger clusters. Much recent progress also comes from better data, longer training, and spending more compute at answer time (<em>reasoning</em> or <em>test-time compute</em>).</p>
+</section>
+
+<section id="using">
+<h2>Using LLMs well</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Technique</th><th>What it is</th><th>When to use it</th></tr></thead>
+  <tbody>
+    <tr><td>Prompting</td><td>Clear instructions, examples, and the context the model needs</td><td>Always the first step</td></tr>
+    <tr><td>RAG</td><td>Retrieve relevant documents and put them in the prompt</td><td>Answers about your own or recent data</td></tr>
+    <tr><td>Tool use</td><td>The model calls functions: search, code, databases</td><td>Actions, fresh facts, exact maths</td></tr>
+    <tr><td>Agents</td><td>A loop of think → use a tool → observe → repeat</td><td>Multi-step tasks such as coding or research</td></tr>
+    <tr><td>Fine-tuning</td><td>Further training on your examples (often LoRA, which trains small add-on weights)</td><td>Consistent style or format, narrow tasks</td></tr>
+    <tr><td>Quantization</td><td>Store weights in fewer bits (8, 4)</td><td>Running models on your own hardware</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="limits">
+<h2>Limits and risks</h2>
+<ul>
+  <li><strong>Hallucination:</strong> fluent, confident and wrong. Check claims against sources, which is exactly why this app quotes the source text.</li>
+  <li><strong>Knowledge cutoff:</strong> a model only knows its training data unless you give it fresh context.</li>
+  <li><strong>Context limits:</strong> long inputs cost more, and details in the middle can be missed.</li>
+  <li><strong>Prompt injection:</strong> text the model reads (web pages, emails) can try to hijack its instructions.</li>
+  <li><strong>Bias:</strong> models absorb biases present in their training data.</li>
+  <li><strong>Cost and latency:</strong> bigger models are slower and more expensive per token.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>Glossary for the updates</h2>
+<p>Terms that show up often in the <a href="index.html">Updates</a> feed:</p>
+<div class="table-wrap"><table>
+  <tbody>
+    <tr><td><strong>Inference</strong></td><td>Running a trained model to get outputs (as opposed to training it).</td></tr>
+    <tr><td><strong>KV cache</strong></td><td>Saved attention keys and values from earlier tokens, so generation does not recompute them.</td></tr>
+    <tr><td><strong>vLLM, llama.cpp</strong></td><td>Popular open-source engines for serving and running models efficiently.</td></tr>
+    <tr><td><strong>Context window</strong></td><td>The maximum number of tokens the model can consider at once.</td></tr>
+    <tr><td><strong>Context engineering</strong></td><td>Choosing, ordering and compressing what goes into the context.</td></tr>
+    <tr><td><strong>Mixture of experts (MoE)</strong></td><td>Only part of the network runs for each token, giving a big model at lower cost.</td></tr>
+    <tr><td><strong>Distillation</strong></td><td>Training a small model to imitate a large one.</td></tr>
+    <tr><td><strong>Speculative decoding</strong></td><td>A small model drafts tokens and the big model checks several at once, for speed.</td></tr>
+    <tr><td><strong>Evals</strong></td><td>Tests that measure model quality on specific tasks.</td></tr>
+    <tr><td><strong>Structured output</strong></td><td>Forcing the model's reply to match a schema, such as JSON.</td></tr>
+    <tr><td><strong>LangGraph</strong></td><td>A library for building agents as graphs of steps.</td></tr>
+    <tr><td><strong>Hugging Face Transformers</strong></td><td>The most widely used library of pretrained models.</td></tr>
+  </tbody>
+</table></div>
+<p>Back to the <a href="index.html">latest updates →</a></p>
+</section>
+
+</article>
+</div>

@@ -1,0 +1,123 @@
+<section class="hero">
+  <p class="eyebrow">Beginner guide · 2 of 3</p>
+  <h1>Deep learning</h1>
+  <p class="lede">Neural networks stack many simple units into layers. With enough data and computing power, they learn their own features from raw pixels, sound and text.</p>
+</section>
+<div class="guide">
+<nav class="toc" aria-label="On this page">
+  <p>On this page</p>
+  <ol>
+    <li><a href="#neuron">The neuron</a></li>
+    <li><a href="#activations">Activation functions</a></li>
+    <li><a href="#network">Layers and networks</a></li>
+    <li><a href="#training">How training works</a></li>
+    <li><a href="#descent">Gradient descent</a></li>
+    <li><a href="#playground">Train a network</a></li>
+    <li><a href="#cnn">Convolutions</a></li>
+    <li><a href="#architectures">Architectures</a></li>
+    <li><a href="#practice">In practice</a></li>
+  </ol>
+</nav>
+<article class="prose">
+
+<section id="neuron">
+<h2>The artificial neuron</h2>
+<p>A neuron takes some numbers in, multiplies each by a <strong>weight</strong>, adds them up with a <strong>bias</strong>, and passes the total through an <strong>activation function</strong>:</p>
+<pre><code>output = activation(w₁·x₁ + w₂·x₂ + … + b)</code></pre>
+<p>Without the activation, that is just linear regression. The activation is what lets networks bend and represent curved, complicated patterns.</p>
+</section>
+
+<section id="activations">
+<h2>Activation functions</h2>
+<figure class="viz card" data-viz="activations">
+  <figcaption class="viz-head"><h3 class="viz-title">Common activations</h3><p class="viz-hint">Toggle curves; hover to read values.</p></figcaption>
+</figure>
+<ul>
+  <li><strong>ReLU</strong> (<code>max(0, x)</code>): the workhorse. Cheap, and its slope never shrinks for positive inputs.</li>
+  <li><strong>Sigmoid</strong> squashes to 0…1, handy for a final probability. Its slope is nearly zero at the ends, which slows learning in deep stacks (the <em>vanishing gradient</em> problem).</li>
+  <li><strong>Tanh</strong> is like sigmoid but centred on zero, from −1 to 1.</li>
+  <li><strong>GELU</strong> is a smooth ReLU used in most transformers, including LLMs.</li>
+</ul>
+<p>Turn on “show slope”: training depends on these slopes, so a flat region means a neuron learns slowly.</p>
+</section>
+
+<section id="network">
+<h2>Layers and networks</h2>
+<p>Neurons are arranged in <strong>layers</strong>. The input layer holds your data, <strong>hidden layers</strong> transform it, and the output layer gives the answer. “Deep” just means many hidden layers. Each layer builds on the one before: in an image model, early layers detect edges, middle layers detect textures and parts, and late layers detect whole objects.</p>
+<ol class="steps">
+  <li><strong>Input</strong>pixels, word IDs, numbers</li>
+  <li><strong>Hidden layers</strong>weighted sums + activations</li>
+  <li><strong>Output</strong>a probability per class, or a number</li>
+  <li><strong>Loss</strong>how wrong was it?</li>
+</ol>
+</section>
+
+<section id="training">
+<h2>How training works</h2>
+<ol>
+  <li><strong>Forward pass:</strong> run a batch of examples through the network to get predictions.</li>
+  <li><strong>Loss:</strong> compare predictions with the right answers. Classification usually uses <em>cross-entropy</em>; regression uses mean squared error.</li>
+  <li><strong>Backpropagation:</strong> use the chain rule of calculus to work out, for every weight, which direction would reduce the loss (its <em>gradient</em>).</li>
+  <li><strong>Update:</strong> move every weight a small step in that direction. The step size is the <strong>learning rate</strong>.</li>
+</ol>
+<p>One pass over the whole dataset is an <strong>epoch</strong>. Training usually takes many epochs, using small random <strong>mini-batches</strong> at each step (stochastic gradient descent).</p>
+</section>
+
+<section id="descent">
+<h2>Gradient descent</h2>
+<p>Picture the loss as a landscape and the weights as your position. Gradient descent always steps downhill. The learning rate decides how big each step is.</p>
+<figure class="viz card" data-viz="descent">
+  <figcaption class="viz-head"><h3 class="viz-title">Rolling down a loss surface</h3><p class="viz-hint">Click anywhere to choose a starting point. Darker means lower loss.</p></figcaption>
+</figure>
+<p>Things to try: on the stretched bowl, a learning rate around 0.18 zig-zags and anything above 0.2 explodes. Momentum carries speed between steps, smoothing the zig-zag. On “two valleys”, a start on the right can get stuck in the shallower valley, a <em>local minimum</em>. Optimizers like <strong>Adam</strong> adapt the step size for each weight automatically, and they are the default for most deep learning.</p>
+</section>
+
+<section id="playground">
+<h2>Train a tiny network</h2>
+<p>This is a real neural network, trained live in your browser with backpropagation. Each dot is a training example; the background colour is what the network currently predicts.</p>
+<figure class="viz card" data-viz="playground">
+  <figcaption class="viz-head"><h3 class="viz-title">Neural network playground</h3><p class="viz-hint">Press Train. Try the spiral with 1 versus 3 layers.</p></figcaption>
+</figure>
+<p>A single neuron can only draw a straight line, so it cannot separate the circle or XOR. Add neurons and layers and the boundary can curve. Too high a learning rate makes the loss jump around; too low makes it crawl.</p>
+</section>
+
+<section id="cnn">
+<h2>Convolutions: how networks see</h2>
+<p>A <strong>convolutional neural network</strong> (CNN) slides small filters across an image. Each filter is a 3×3 grid of weights; at every position it multiplies the pixels under it and adds them up, producing a <strong>feature map</strong> that lights up wherever its pattern appears.</p>
+<figure class="viz card" data-viz="conv">
+  <figcaption class="viz-head"><h3 class="viz-title">One convolution filter</h3><p class="viz-hint">Draw on the input. Pick a filter. Hover the output.</p></figcaption>
+</figure>
+<p>Here the filters are hand-picked. In a real CNN the network <em>learns</em> thousands of filter weights during training, and stacks of them recognise faces, cars or tumours.</p>
+</section>
+
+<section id="architectures">
+<h2>Main architectures</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Architecture</th><th>Idea</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td>MLP (fully connected)</td><td>Every neuron connects to every neuron in the next layer</td><td>Tabular data, small parts of bigger models</td></tr>
+    <tr><td>CNN</td><td>Shared sliding filters</td><td>Images, video, some audio</td></tr>
+    <tr><td>RNN / LSTM</td><td>Processes a sequence one step at a time, with memory</td><td>Older text and speech models, time series</td></tr>
+    <tr><td>Transformer</td><td>Attention lets every position look at every other position at once</td><td>Language (LLMs), and now vision and audio too</td></tr>
+    <tr><td>Autoencoder</td><td>Compress, then reconstruct</td><td>Denoising, anomaly detection</td></tr>
+    <tr><td>Diffusion model</td><td>Learn to remove noise step by step</td><td>Image and video generation</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="practice">
+<h2>In practice</h2>
+<ul>
+  <li><strong>Data beats cleverness.</strong> More, cleaner, more varied data usually helps more than a fancier model.</li>
+  <li><strong>Watch both curves.</strong> Plot training and validation loss. If validation loss rises while training loss falls, you are overfitting.</li>
+  <li><strong>Regularize.</strong> Dropout (randomly switching neurons off during training), weight decay and early stopping all reduce overfitting.</li>
+  <li><strong>Normalize.</strong> Batch norm and layer norm keep values in a healthy range so deep stacks train reliably.</li>
+  <li><strong>Transfer learning.</strong> Start from a model pretrained on a huge dataset and <em>fine-tune</em> it on yours. That is far cheaper than training from scratch.</li>
+  <li><strong>Hardware.</strong> Training is mostly big matrix multiplications, which is why GPUs and TPUs matter.</li>
+</ul>
+<p>Popular libraries: <strong>PyTorch</strong> (most research and LLM work), <strong>JAX</strong> and <strong>TensorFlow/Keras</strong>.</p>
+<p>Next: <a href="llms.html">Large language models →</a></p>
+</section>
+
+</article>
+</div>

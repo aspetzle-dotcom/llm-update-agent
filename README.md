@@ -42,6 +42,24 @@ The program reports `partial` when a source fails, a candidate cap truncates col
 
 Exit codes: **0** succeeded, **2** usable partial result, **1** failed, **130** interrupted. A partial result is still useful: open the reported digest to see source status and limitations.
 
+## Browse in a web app
+
+```powershell
+llm-updates serve
+```
+
+Open http://127.0.0.1:8765/. The default **Updates** page shows the latest digest, source coverage, topics so far, and earlier digests. Useful / Already knew / Skip buttons record the same append-only feedback as `llm-updates feedback`. Three beginner guides with interactive charts sit alongside: **Classical ML** (data types, scaling, regression, k-nearest neighbours, k-means, overfitting, classification metrics), **Deep learning** (activations, gradient descent, a neural network you can train in the browser, convolutions), and **LLMs** (tokens, embeddings, attention, sampling, training, glossary). Use `--config demo.toml` before `serve` to browse the demo database, and `--port` to change the port.
+
+The server binds only to 127.0.0.1, rejects other Host headers and cross-site writes, and takes the database lock only while saving feedback. It needs no extra dependencies, and the charts make no network requests.
+
+To publish a read-only copy, for example on GitHub Pages or any static host:
+
+```powershell
+llm-updates site --out data/site
+```
+
+The export contains the guides and every committed digest (source excerpts, coverage and scores). It leaves out feedback buttons, feedback notes and model transcripts. Remember that digests quote third-party sources; check that you are comfortable republishing those excerpts before making the site public.
+
 ## Commands
 
 ```text
@@ -58,6 +76,8 @@ llm-updates feedback ENTRY_ID useful --note "Clear context example"
 llm-updates feedback ENTRY_ID already_knew
 llm-updates feedback ENTRY_ID skip
 llm-updates status
+llm-updates serve --port 8765
+llm-updates site --out data/site
 llm-updates evaluate --dataset eval/synthetic.jsonl --mode baseline
 llm-updates evaluate --dataset eval/synthetic.jsonl --mode newest
 llm-updates evaluate --dataset eval/synthetic.jsonl --mode keyword-recency

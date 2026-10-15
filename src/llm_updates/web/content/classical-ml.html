@@ -1,0 +1,144 @@
+<section class="hero">
+  <p class="eyebrow">Beginner guide · 1 of 3</p>
+  <h1>Classical machine learning</h1>
+  <p class="lede">Before neural networks, there was, and still is, a toolbox of simpler models that learn patterns from tables of data. They are fast, explainable, and often all you need.</p>
+</section>
+<div class="guide">
+<nav class="toc" aria-label="On this page">
+  <p>On this page</p>
+  <ol>
+    <li><a href="#what">What learning means</a></li>
+    <li><a href="#data">Kinds of data</a></li>
+    <li><a href="#scaling">Preparing features</a></li>
+    <li><a href="#regression">Regression</a></li>
+    <li><a href="#classification">Classification</a></li>
+    <li><a href="#clustering">Clustering</a></li>
+    <li><a href="#overfitting">Overfitting</a></li>
+    <li><a href="#evaluation">Measuring a model</a></li>
+    <li><a href="#models">Model cheat sheet</a></li>
+  </ol>
+</nav>
+<article class="prose">
+
+<section id="what">
+<h2>What “learning” means</h2>
+<p>A machine learning model is a function with adjustable settings, called <strong>parameters</strong>. You show it examples, it measures how wrong its answers are with a <strong>loss</strong>, and an algorithm nudges the parameters to make the loss smaller. Once trained, the model should give good answers on examples it has never seen.</p>
+<ul>
+  <li><strong>Supervised learning:</strong> every example has the right answer attached (a <em>label</em>). Predict house prices, flag spam.</li>
+  <li><strong>Unsupervised learning:</strong> no labels. Find structure, such as groups of similar customers.</li>
+  <li><strong>Reinforcement learning:</strong> an agent acts, gets rewards, and learns which actions pay off.</li>
+</ul>
+<div class="callout"><p>The single most important habit: keep some data aside as a <strong>test set</strong> that the model never trains on. That is the only honest way to know how it will do in the real world.</p></div>
+</section>
+
+<section id="data">
+<h2>Kinds of data</h2>
+<p>Each row in a dataset is one <strong>example</strong>; each column is a <strong>feature</strong>. What type a feature is decides how you can use it.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Type</th><th>Examples</th><th>How models use it</th></tr></thead>
+  <tbody>
+    <tr><td>Numerical (continuous)</td><td>price, temperature, height</td><td>Directly, usually after scaling</td></tr>
+    <tr><td>Numerical (discrete)</td><td>number of rooms, clicks</td><td>Directly; counts are often log-transformed</td></tr>
+    <tr><td>Categorical (nominal)</td><td>colour, country, product type</td><td>One-hot encoding: one 0/1 column per category</td></tr>
+    <tr><td>Ordinal</td><td>small / medium / large, star ratings</td><td>Map to ordered numbers 1, 2, 3</td></tr>
+    <tr><td>Boolean</td><td>is_member, has_garage</td><td>As 0 or 1</td></tr>
+    <tr><td>Date and time</td><td>signup date, timestamp</td><td>Split into parts: weekday, month, hour, “days since”</td></tr>
+    <tr><td>Text</td><td>reviews, emails</td><td>Word counts (bag of words), TF-IDF, or embeddings</td></tr>
+    <tr><td>Images, audio</td><td>photos, recordings</td><td>Usually deep learning (next guide)</td></tr>
+  </tbody>
+</table></div>
+<h3>One-hot encoding</h3>
+<p>A model cannot multiply “red” by a number, and coding red=1, green=2, blue=3 would wrongly suggest blue is “more” than red. One-hot encoding gives each category its own column instead:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>colour</th><th>is_red</th><th>is_green</th><th>is_blue</th></tr></thead>
+  <tbody><tr><td>red</td><td>1</td><td>0</td><td>0</td></tr><tr><td>blue</td><td>0</td><td>0</td><td>1</td></tr><tr><td>green</td><td>0</td><td>1</td><td>0</td></tr></tbody>
+</table></div>
+<p><strong>Missing values</strong> need a decision too: drop the row, fill in the average (<em>imputation</em>), or add an “is missing” column so the model can learn whether missingness itself means something.</p>
+</section>
+
+<section id="scaling">
+<h2>Preparing features: scaling</h2>
+<p>House size runs into thousands of square feet; bedrooms run from 1 to 6. Models that measure distance (k-nearest neighbours, k-means) or use gradient descent would treat size as hundreds of times more important, just because its numbers are bigger. Scaling puts features on comparable ranges.</p>
+<figure class="viz card" data-viz="scaling">
+  <figcaption class="viz-head"><h3 class="viz-title">Same data, three scalings</h3><p class="viz-hint">Both axes share one scale. Switch the scaling.</p></figcaption>
+</figure>
+<ul>
+  <li><strong>Min–max</strong> maps each feature to 0…1: <code>(x − min) / (max − min)</code>.</li>
+  <li><strong>Standardization</strong> gives mean 0 and standard deviation 1: <code>(x − mean) / std</code>. It is the usual default.</li>
+</ul>
+<p>Compute the min, max, mean and standard deviation from the training set only, then apply those same numbers to the test set. Otherwise information from the test set leaks into training.</p>
+</section>
+
+<section id="regression">
+<h2>Regression: predicting a number</h2>
+<p><strong>Linear regression</strong> fits a straight line <code>y = a·x + b</code> through the data. “Best” means the line with the smallest <strong>mean squared error</strong>: the average of the squared vertical gaps between each point and the line. Squaring makes big misses count much more than small ones.</p>
+<figure class="viz card" data-viz="linreg">
+  <figcaption class="viz-head"><h3 class="viz-title">Least-squares line</h3><p class="viz-hint">Click to add points. Try one far-away point.</p></figcaption>
+</figure>
+<p>Notice how a single outlier drags the whole line. <strong>R²</strong> tells you what share of the variation in <code>y</code> the line explains: 1 is perfect, 0 is no better than always guessing the average. With many features the idea is the same, just a plane or hyperplane instead of a line.</p>
+</section>
+
+<section id="classification">
+<h2>Classification: predicting a category</h2>
+<p><strong>k-nearest neighbours</strong> is the simplest classifier there is: to label a new point, look at the <em>k</em> closest training points and take a vote. There is no training step at all; the data is the model.</p>
+<figure class="viz card" data-viz="knn">
+  <figcaption class="viz-head"><h3 class="viz-title">k-nearest neighbours decision regions</h3><p class="viz-hint">Click to add points. Change k.</p></figcaption>
+</figure>
+<p>With <code>k = 1</code> the boundary wraps tightly around every single point, including noisy ones. Larger <em>k</em> gives smoother, more general regions. <em>Leave-one-out accuracy</em> classifies each point using all the others, a quick stand-in for test accuracy.</p>
+<p>Other classic classifiers: <strong>logistic regression</strong> (a straight boundary with a probability attached), <strong>decision trees</strong> (a flowchart of yes/no questions), <strong>random forests</strong> and <strong>gradient-boosted trees</strong> (many trees voting; often the strongest choice for tables), and <strong>support vector machines</strong> (the boundary with the widest margin).</p>
+</section>
+
+<section id="clustering">
+<h2>Clustering: finding groups without labels</h2>
+<p><strong>k-means</strong> repeats two steps: assign every point to its nearest centre, then move each centre to the average of its points. It stops when nothing changes.</p>
+<figure class="viz card" data-viz="kmeans">
+  <figcaption class="viz-head"><h3 class="viz-title">k-means, step by step</h3><p class="viz-hint">Press Step a few times, or Run.</p></figcaption>
+</figure>
+<p>Try the wrong <em>k</em> and different starting centres: k-means always finds <em>some</em> answer, but it can split a real group in two or merge two groups. <em>Inertia</em> measures how tight the clusters are; it always drops as <em>k</em> grows, so look for the “elbow” where adding clusters stops helping much.</p>
+</section>
+
+<section id="overfitting">
+<h2>Overfitting and underfitting</h2>
+<p>A model that is too simple misses the pattern (<strong>underfitting</strong>). A model that is too flexible memorises the noise in its training data and fails on new data (<strong>overfitting</strong>). This is the <em>bias–variance trade-off</em>.</p>
+<figure class="viz card" data-viz="overfit">
+  <figcaption class="viz-head"><h3 class="viz-title">Fitting polynomials of increasing degree</h3><p class="viz-hint">Drag the degree slider and watch the two error curves.</p></figcaption>
+</figure>
+<p>Training error keeps falling as the degree goes up. Test error falls, then rises again. The bottom of the test curve is the sweet spot. Ways to fight overfitting: more data, simpler models, <strong>regularization</strong> (penalising large parameters, as in ridge and lasso regression), and <strong>cross-validation</strong> to choose settings.</p>
+</section>
+
+<section id="evaluation">
+<h2>Measuring a classifier</h2>
+<p>Most classifiers output a score, and you pick a <strong>threshold</strong> above which you say “positive”. Moving it trades one kind of mistake for the other.</p>
+<figure class="viz card" data-viz="threshold">
+  <figcaption class="viz-head"><h3 class="viz-title">Threshold, confusion matrix and metrics</h3><p class="viz-hint">Drag on the chart or use the sliders.</p></figcaption>
+</figure>
+<ul>
+  <li><strong>Accuracy:</strong> share of all answers that are right. Misleading when one class is rare.</li>
+  <li><strong>Precision:</strong> of everything flagged positive, how much really was. Matters when false alarms are costly.</li>
+  <li><strong>Recall:</strong> of all real positives, how many were caught. Matters when misses are costly, such as in disease screening.</li>
+  <li><strong>F1:</strong> a single number balancing precision and recall.</li>
+</ul>
+<p>For regression, use mean squared error, its square root (RMSE, in the target's own units), or mean absolute error.</p>
+</section>
+
+<section id="models">
+<h2>Model cheat sheet</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Model</th><th>Task</th><th>Good at</th><th>Watch out for</th></tr></thead>
+  <tbody>
+    <tr><td>Linear / logistic regression</td><td>Regression / classification</td><td>Fast, interpretable baselines</td><td>Only straight-line relationships unless you add features</td></tr>
+    <tr><td>k-nearest neighbours</td><td>Both</td><td>Simple, no training</td><td>Slow on big data; needs scaling</td></tr>
+    <tr><td>Decision tree</td><td>Both</td><td>Readable rules, mixed data types</td><td>Overfits when deep</td></tr>
+    <tr><td>Random forest</td><td>Both</td><td>Strong default, little tuning</td><td>Larger, less interpretable</td></tr>
+    <tr><td>Gradient boosting (XGBoost, LightGBM)</td><td>Both</td><td>Often best on tabular data</td><td>More settings to tune</td></tr>
+    <tr><td>Support vector machine</td><td>Mostly classification</td><td>Small to medium datasets</td><td>Scaling; slow on large data</td></tr>
+    <tr><td>Naive Bayes</td><td>Classification</td><td>Text, very fast</td><td>Assumes features are independent</td></tr>
+    <tr><td>k-means</td><td>Clustering</td><td>Simple, fast grouping</td><td>Must choose k; assumes round clusters</td></tr>
+    <tr><td>PCA</td><td>Dimensionality reduction</td><td>Compressing and visualising features</td><td>Components can be hard to interpret</td></tr>
+  </tbody>
+</table></div>
+<p>Next: <a href="deep-learning.html">Deep learning →</a></p>
+</section>
+
+</article>
+</div>
