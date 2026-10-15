@@ -11,6 +11,7 @@ from .config import load
 from .coordinator import Coordinator, resume_run
 from .evaluation import evaluate
 from .locking import database_lock
+from .models import MAX_ENTRIES
 from .rendering import export, markdown
 from .storage import Repository
 from .util import date, dumps
@@ -37,7 +38,7 @@ def parser():
             "--refresh-of", help="Create an intentional refresh linked to an earlier run"
         )
         run.add_argument("--profile", type=Path)
-        run.add_argument("--top", type=int, choices=range(1, 6), default=5)
+        run.add_argument("--top", type=int, choices=range(1, MAX_ENTRIES + 1), default=MAX_ENTRIES)
         run.add_argument("--mode", choices=("baseline", "research"), default="baseline")
         run.add_argument(
             "--ranker", choices=("baseline", "newest", "keyword-recency"), default="baseline"

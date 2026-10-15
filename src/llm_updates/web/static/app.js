@@ -55,6 +55,19 @@
     });
   });
 
+  // Reveal earlier digests a few at a time.
+  var more = document.querySelector(".feed-more");
+  if (more) {
+    more.addEventListener("click", function () {
+      var hidden = document.querySelectorAll(".digest-block[data-older][hidden]");
+      var step = +more.dataset.step || 3;
+      for (var i = 0; i < hidden.length && i < step; i++) hidden[i].hidden = false;
+      var left = hidden.length - step;
+      if (left > 0) more.textContent = "Show older digests (" + left + " more)";
+      else more.remove();
+    });
+  }
+
   // Highlight the guide section currently on screen.
   var tocLinks = document.querySelectorAll(".toc a");
   if (tocLinks.length && "IntersectionObserver" in window) {

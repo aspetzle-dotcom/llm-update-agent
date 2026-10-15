@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .collectors import pages
 from .config import Config
-from .models import CollectorResult, NormalizedItem
+from .models import MAX_ENTRIES, CollectorResult, NormalizedItem
 from .network import Fetcher
 from .providers import OpenAIAdapter
 from .ranking import rank
@@ -31,15 +31,15 @@ class Coordinator:
         *,
         fixture=None,
         mode="baseline",
-        top=5,
+        top=MAX_ENTRIES,
         key="manual",
         collect_only=False,
         parent=None,
         resume=None,
         ranking_mode="baseline",
     ):
-        if not 1 <= top <= 5:
-            raise ValueError("top must be between 1 and 5")
+        if not 1 <= top <= MAX_ENTRIES:
+            raise ValueError(f"top must be between 1 and {MAX_ENTRIES}")
         if datetime.fromisoformat(since) >= datetime.fromisoformat(until):
             raise ValueError("since must precede until")
         self.repo.configure(self.config)

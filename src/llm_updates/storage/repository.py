@@ -19,7 +19,7 @@ class Repository:
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA journal_mode=WAL")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 4:
+        if version > 5:
             raise ValueError("database schema is newer than this application")
         if version == 0:
             sql = Path(__file__).with_name("001_initial.sql").read_text(encoding="utf-8")
@@ -35,6 +35,19 @@ class Repository:
         if version < 4:
             sql = Path(__file__).with_name("004_forecast_projects.sql").read_text(encoding="utf-8")
             self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=4;\nCOMMIT;")
+        if version < 5:
+            # Rebuilding a referenced table requires foreign keys off outside the transaction.
+            sql = Path(__file__).with_name("005_digest_size.sql").read_text(encoding="utf-8")
+            self.db.execute("PRAGMA foreign_keys=OFF")
+            try:
+                self.db.executescript(
+                    "BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=5;\nCOMMIT;"
+                )
+            finally:
+                self.db.execute("PRAGMA foreign_keys=ON")
+            for table in ("digest_entries", "claims", "feedback"):
+                if self.db.execute(f"PRAGMA foreign_key_check({table})").fetchone():
+                    raise ValueError("foreign key check failed after migration 005")
 
     def close(self):
         self.db.close()

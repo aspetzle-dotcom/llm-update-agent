@@ -28,6 +28,18 @@ by this repository integration; do not add a second frontend server or cloud run
   uploads and forecast. Agree whether to keep both or link them (for example, “Forecast this
   dataset” from Datasets) before extending either.
 
+## Front-page feed (Claude, branch `claude/front-page-feed`, stacked on PR #2)
+
+- Updates shows the latest digest in full, then up to 30 earlier digests as compact story
+  lists (3 visible, "Show older digests" reveals more). Single-digest pages are unchanged.
+- Digests hold up to 10 stories (`MAX_ENTRIES` in `models.py`; CLI `--top` default 10).
+  Migration 005 rebuilds `digest_entries` for the new position CHECK, with foreign keys
+  off during the rebuild and checked afterwards.
+- Live collection on 15 Oct 2026: arXiv works but hits the 100-candidate cap. GitHub
+  sources exhaust the unauthenticated rate limit after one run, OpenAI News returns
+  HTTP 403, and Anthropic Engineering article links fail the destination allowlist.
+  These are collector issues, not front-page issues.
+
 ## Working together
 
 Read this file and the latest commits before editing. Use separate branches for
