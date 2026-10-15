@@ -7,6 +7,8 @@ lock as the CLI, so the server never holds the lock between requests.
 from __future__ import annotations
 
 import json
+import math
+import re
 from contextlib import contextmanager
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -29,6 +31,9 @@ CSP = (
     "form-action 'none'"
 )
 MAX_BODY = 4096
+MAX_PROJECT_BODY = 2_000_000
+MAX_POINTS = 20_000
+PROJECT_ID = re.compile(r"^project_[0-9a-f]{32}$")
 
 
 def static_assets() -> dict[str, bytes]:
@@ -95,6 +100,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(HTTPStatus.FORBIDDEN, b"forbidden", "text/plain")
         path = urlsplit(self.path).path
+        if path.startswith("/api/"):
+            return self._api_get(path)
         if path.startswith("/static/"):
             name = path.removeprefix("/static/")
             body = self.server.assets.get(name)
@@ -113,48 +120,156 @@ class Handler(BaseHTTPRequestHandler):
             return self._page_not_found()
         self._send(HTTPStatus.OK, page.encode(), "text/html; charset=utf-8")
 
-    def do_POST(self):
+    def _api_get(self, path):
+        try:
+            with reader(self.server.database) as repo:
+                if path == "/api/projects":
+                    return self._json(HTTPStatus.OK, repo.projects() if repo else [])
+                project_id = path.removeprefix("/api/projects/")
+                if PROJECT_ID.match(project_id):
+                    project = repo.project(project_id) if repo else None
+                    if project:
+                        return self._json(HTTPStatus.OK, project)
+        except ValueError as exc:
+            return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+        self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+
+    def _write_allowed(self) -> bool:
         if not self._host_ok():
-            return self._json(HTTPStatus.FORBIDDEN, {"error": "forbidden"})
+            self._json(HTTPStatus.FORBIDDEN, {"error": "forbidden"})
+            return False
         port = self.server.server_address[1]
         origin = self.headers.get("Origin")
         if origin and origin not in (f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
-            return self._json(HTTPStatus.FORBIDDEN, {"error": "cross-origin request"})
+            self._json(HTTPStatus.FORBIDDEN, {"error": "cross-origin request"})
+            return False
         if self.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
-            return self._json(HTTPStatus.FORBIDDEN, {"error": "cross-site request"})
-        if urlsplit(self.path).path != "/api/feedback":
-            return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+            self._json(HTTPStatus.FORBIDDEN, {"error": "cross-site request"})
+            return False
+        return True
+
+    def _read_json(self, limit):
+        """Returns the decoded body, or None after sending an error response."""
         if self.headers.get_content_type() != "application/json":
-            return self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "expected JSON"})
+            self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "expected JSON"})
+            return None
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
             length = -1
-        if not 0 < length <= MAX_BODY:
-            return self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid body size"})
+        if not 0 < length <= limit:
+            self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid body size"})
+            return None
         try:
             data = json.loads(self.rfile.read(length))
-            entry_id, label = data["entry_id"], data["label"]
-            note = data.get("note")
-        except (ValueError, KeyError, TypeError):
-            return self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid request"})
+        except ValueError:
+            data = None
+        if not isinstance(data, dict):
+            self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid request"})
+            return None
+        return data
+
+    def _write(self, action):
+        """Run one repository write under the CLI's database lock."""
+        try:
+            with database_lock(self.server.database):
+                repo = Repository(self.server.database)
+                try:
+                    return True, action(repo)
+                finally:
+                    repo.close()
+        except ValueError as exc:
+            status = HTTPStatus.CONFLICT if "another process" in str(exc) else HTTPStatus.NOT_FOUND
+            self._json(status, {"error": str(exc)})
+            return False, None
+
+    def do_POST(self):
+        if not self._write_allowed():
+            return
+        path = urlsplit(self.path).path
+        if path == "/api/feedback":
+            return self._feedback()
+        if path == "/api/projects":
+            return self._save_project()
+        self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+
+    def do_DELETE(self):
+        if not self._write_allowed():
+            return
+        project_id = urlsplit(self.path).path.removeprefix("/api/projects/")
+        if not PROJECT_ID.match(project_id) or not Path(self.server.database).exists():
+            return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+        ok, deleted = self._write(lambda repo: repo.delete_project(project_id))
+        if ok:
+            status = HTTPStatus.OK if deleted else HTTPStatus.NOT_FOUND
+            self._json(status, {"deleted": deleted})
+
+    def _feedback(self):
+        data = self._read_json(MAX_BODY)
+        if data is None:
+            return
+        entry_id, label, note = data.get("entry_id"), data.get("label"), data.get("note")
         if label not in {name for name, _ in LABELS} or not isinstance(entry_id, str):
             return self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid label"})
         if note is not None and not isinstance(note, str):
             return self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid note"})
         if not Path(self.server.database).exists():
             return self._json(HTTPStatus.NOT_FOUND, {"error": "no database"})
+        ok, result = self._write(lambda repo: repo.feedback(entry_id, label, note))
+        if ok:
+            self._json(HTTPStatus.OK, result)
+
+    def _save_project(self):
+        data = self._read_json(MAX_PROJECT_BODY)
+        if data is None:
+            return
         try:
-            with database_lock(self.server.database):
-                repo = Repository(self.server.database)
-                try:
-                    result = repo.feedback(entry_id, label, note)
-                finally:
-                    repo.close()
+            project = validate_project(data)
         except ValueError as exc:
-            status = HTTPStatus.CONFLICT if "another process" in str(exc) else HTTPStatus.NOT_FOUND
-            return self._json(status, {"error": str(exc)})
-        self._json(HTTPStatus.OK, result)
+            return self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+        ok, project_id = self._write(lambda repo: repo.save_project(**project))
+        if ok:
+            self._json(HTTPStatus.OK, {"project_id": project_id})
+
+
+def _number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def validate_project(data: dict) -> dict:
+    """Accept only the shape the dashboard sends; the series must be finite numbers."""
+    project_id = data.get("project_id")
+    if project_id is not None and (
+        not isinstance(project_id, str) or not PROJECT_ID.match(project_id)
+    ):
+        raise ValueError("invalid project id")
+    name = data.get("name")
+    if not isinstance(name, str) or not 0 < len(name.strip()) <= 120:
+        raise ValueError("name must be 1-120 characters")
+    series = data.get("data")
+    if not isinstance(series, dict):
+        raise ValueError("missing data")
+    dates, values = series.get("dates"), series.get("values")
+    if not isinstance(dates, list) or not isinstance(values, list) or len(dates) != len(values):
+        raise ValueError("dates and values must be lists of equal length")
+    if not 0 < len(values) <= MAX_POINTS:
+        raise ValueError(f"series must have 1-{MAX_POINTS} points")
+    if not all(_number(v) for v in dates) or not all(_number(v) for v in values):
+        raise ValueError("dates and values must be finite numbers")
+    clean = {"dates": dates, "values": values}
+    for field in ("label", "freq", "source"):
+        if isinstance(series.get(field), str):
+            clean[field] = series[field][:200]
+    settings, summary = data.get("settings", {}), data.get("summary", {})
+    if not isinstance(settings, dict) or not isinstance(summary, dict):
+        raise ValueError("settings and summary must be objects")
+    return {
+        "project_id": project_id,
+        "name": name.strip(),
+        "data": clean,
+        "settings": settings,
+        "summary": summary,
+    }
 
 
 class Server(ThreadingHTTPServer):

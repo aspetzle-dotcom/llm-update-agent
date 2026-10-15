@@ -107,3 +107,67 @@ def test_static_site_without_database(tmp_path):
     build_site(str(tmp_path / "missing.sqlite3"), tmp_path / "site")
     assert not (tmp_path / "missing.sqlite3").exists()
     assert "No digests yet" in (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
+
+
+PROJECT = {
+    "name": "Acme retail",
+    "data": {"dates": [1704067200000, 1706745600000], "values": [120.5, 130], "freq": "month"},
+    "settings": {"horizon": 12, "scenario": {"growth": 5}},
+    "summary": {"model": "holt"},
+}
+
+
+def test_forecast_projects_round_trip(server, config):
+    json_headers = {"Content-Type": "application/json"}
+    status, data = request(server, "POST", "/api/projects", json.dumps(PROJECT), json_headers)
+    assert status == 200
+    project_id = json.loads(data)["project_id"]
+    status, data = request(server, "GET", "/api/projects")
+    listed = json.loads(data)
+    assert status == 200 and listed[0]["project_id"] == project_id and listed[0]["points"] == 2
+    status, data = request(server, "GET", f"/api/projects/{project_id}")
+    stored = json.loads(data)
+    assert (
+        stored["data"]["values"] == [120.5, 130] and stored["settings"]["scenario"]["growth"] == 5
+    )
+
+    update = {**PROJECT, "project_id": project_id, "name": "Acme retail v2"}
+    assert request(server, "POST", "/api/projects", json.dumps(update), json_headers)[0] == 200
+    assert len(json.loads(request(server, "GET", "/api/projects")[1])) == 1
+
+    assert request(server, "DELETE", f"/api/projects/{project_id}")[0] == 200
+    assert request(server, "DELETE", f"/api/projects/{project_id}")[0] == 404
+    assert request(server, "GET", f"/api/projects/{project_id}")[0] == 404
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"name": ""},
+        {"name": "x" * 121},
+        {"project_id": "../etc"},
+        {"data": {"dates": [1, 2], "values": [1]}},
+        {"data": {"dates": [1], "values": [float("inf")]}},
+        {"data": {"dates": [1], "values": [True]}},
+        {"settings": []},
+    ],
+)
+def test_forecast_project_validation(server, change):
+    body = json.dumps({**PROJECT, **change})
+    headers = {"Content-Type": "application/json"}
+    assert request(server, "POST", "/api/projects", body, headers)[0] == 400
+
+
+def test_forecast_project_writes_are_same_origin_only(server):
+    headers = {"Content-Type": "application/json", "Origin": "https://evil.example"}
+    assert request(server, "POST", "/api/projects", json.dumps(PROJECT), headers)[0] == 403
+    assert request(server, "DELETE", "/api/projects/project_" + "0" * 32, None, headers)[0] == 403
+
+
+def test_forecasting_page_in_app_and_static_site(server, config, tmp_path):
+    status, body = request(server, "GET", "/forecasting.html")
+    assert status == 200 and b"forecast.js" in body and b'data-mode="live"' in body
+    build_site(config.database, tmp_path / "site")
+    page = (tmp_path / "site" / "forecasting.html").read_text(encoding="utf-8")
+    assert 'data-mode="static"' in page and "Forecasting" in page
+    assert (tmp_path / "site" / "static" / "dashboard.js").exists()
