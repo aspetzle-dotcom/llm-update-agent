@@ -132,3 +132,35 @@ The live smoke check performed on 14 October 2026 fetched arXiv, Anthropic, and 
 The OpenAI adapter is tested through the actual installed SDK with a mocked HTTP response. Live model behavior and real-world usefulness are not yet validated. `eval/synthetic.jsonl` has 60 fictional labeled records to exercise metrics and split checks; its results are not a real benchmark or proof that the agent improves on the baseline.
 
 See [docs/architecture.md](docs/architecture.md) for storage and recovery decisions, and [docs/remaining-work.md](docs/remaining-work.md) for the remaining specification work and evaluation protocol.
+
+## Fieldnotes: one shared app
+
+The existing `llm-updates serve` command now serves the Fieldnotes interface: the
+news feed reads the agent database directly, the three interactive ML guides remain
+available, and **Datasets & tools** provides CSV uploads, quality dashboards,
+single-feature regression, and linear-trend forecasts. No separate React dev server,
+Sites account, cloud storage, or Node installation is needed to run the app.
+
+Upload a CSV with unique headers (up to 2 MB, 10,000 rows and 50 columns). Files are
+stored in `<configured database>.workspace.sqlite3`, separate from collector state.
+They survive server restarts and are never included in `llm-updates site` exports.
+The app remains loopback-only and preserves its Host/Origin request guards.
+
+Prediction uses a reproducible random 80/20 split and compares MAE with a training-mean
+baseline. Forecasting requires unique, evenly spaced ISO dates; it holds out the last
+20%, compares with the last training value, then refits to produce future estimates.
+Rows with missing selected values are excluded. These are exploratory linear models,
+without seasonal modeling or uncertainty intervals. Predictions can be exported as
+CSV; models are recomputed when a dataset is reopened.
+
+### Editing the shared interface
+
+- Python pages/server: `src/llm_updates/web/`
+- Shared design: `src/llm_updates/web/static/fieldnotes.css`
+- Dataset React/TypeScript source: `frontend/`
+- Bundled browser asset: `src/llm_updates/web/static/datasets.js` (committed for Python-only installs)
+
+To rebuild the dataset UI, use Node 22.13+ and run `npm ci` then `npm run build` in
+`frontend/`. Run `npm test` there for numerical/CSV regression checks, and `pytest`
+from the repository root for server, persistence, security-guard and collector tests.
+Commit the rebuilt asset with its source. See `docs/agent-handoff.md` for coordination.

@@ -14,10 +14,11 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from ..locking import database_lock
 from ..storage import Repository
+from .datasets import MAX_REQUEST_BYTES, DatasetStore
 from .pages import LABELS, render
 
 STATIC_TYPES = {
@@ -100,6 +101,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(HTTPStatus.FORBIDDEN, b"forbidden", "text/plain")
         path = urlsplit(self.path).path
+        if path == "/api/datasets":
+            return self._datasets_get()
         if path.startswith("/api/"):
             return self._api_get(path)
         if path.startswith("/static/"):
@@ -119,6 +122,19 @@ class Handler(BaseHTTPRequestHandler):
         if page is None:
             return self._page_not_found()
         self._send(HTTPStatus.OK, page.encode(), "text/html; charset=utf-8")
+
+    def _datasets_get(self):
+        try:
+            dataset_id = parse_qs(urlsplit(self.path).query).get("id", [None])[0]
+            store = DatasetStore(self.server.database)
+            if dataset_id is None:
+                return self._json(HTTPStatus.OK, store.list())
+            text = store.get(dataset_id)
+            if text is None:
+                return self._json(HTTPStatus.NOT_FOUND, {"error": "Dataset not found."})
+            return self._send(HTTPStatus.OK, text.encode("utf-8"), "text/csv; charset=utf-8")
+        except ValueError as exc:
+            return self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
 
     def _api_get(self, path):
         try:
@@ -191,11 +207,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._feedback()
         if path == "/api/projects":
             return self._save_project()
+        if path == "/api/datasets":
+            return self._datasets_write()
         self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_DELETE(self):
         if not self._write_allowed():
             return
+        if urlsplit(self.path).path == "/api/datasets":
+            return self._datasets_write()
         project_id = urlsplit(self.path).path.removeprefix("/api/projects/")
         if not PROJECT_ID.match(project_id) or not Path(self.server.database).exists():
             return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
@@ -230,6 +250,28 @@ class Handler(BaseHTTPRequestHandler):
         ok, project_id = self._write(lambda repo: repo.save_project(**project))
         if ok:
             self._json(HTTPStatus.OK, {"project_id": project_id})
+
+    def _datasets_write(self):
+        store = DatasetStore(self.server.database)
+        try:
+            if self.command == "DELETE":
+                dataset_id = parse_qs(urlsplit(self.path).query).get("id", [""])[0]
+                store.delete(dataset_id)
+                return self._json(HTTPStatus.OK, {"ok": True})
+            if self.headers.get_content_type() != "application/json":
+                return self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "Expected JSON."})
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= MAX_REQUEST_BYTES:
+                return self._json(
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "Upload too large."}
+                )
+            data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict):
+                raise ValueError("Expected an upload object.")
+            item = store.upload(data.get("name"), data.get("csv"))
+            return self._json(HTTPStatus.OK, item)
+        except (ValueError, TypeError) as exc:
+            return self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
 
 
 def _number(value) -> bool:

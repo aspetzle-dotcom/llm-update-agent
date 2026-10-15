@@ -171,3 +171,68 @@ def test_forecasting_page_in_app_and_static_site(server, config, tmp_path):
     page = (tmp_path / "site" / "forecasting.html").read_text(encoding="utf-8")
     assert 'data-mode="static"' in page and "Forecasting" in page
     assert (tmp_path / "site" / "static" / "dashboard.js").exists()
+
+
+def test_dataset_upload_persistence_delete_and_guards(server, config, tmp_path):
+    from llm_updates.web.datasets import DatasetStore
+
+    headers = {"Content-Type": "application/json"}
+    body = json.dumps({"name": "trial.csv", "csv": "date,value\n2026-01-01,12\n2026-01-02,14"})
+    assert (
+        request(
+            server, "POST", "/api/datasets", body, {**headers, "Origin": "https://evil.example"}
+        )[0]
+        == 403
+    )
+    assert (
+        request(server, "POST", "/api/datasets", body, {**headers, "Sec-Fetch-Site": "cross-site"})[
+            0
+        ]
+        == 403
+    )
+    status, data = request(server, "POST", "/api/datasets", body, headers)
+    assert status == 200
+    item = json.loads(data)
+    assert json.loads(item["content"])["rows"] == 2
+    assert DatasetStore(config.database).list()[0]["id"] == item["id"]
+    status, raw = request(server, "GET", "/api/datasets?id=" + item["id"])
+    assert status == 200 and raw.decode() == json.loads(body)["csv"]
+    assert request(server, "GET", "/api/datasets?id=../../etc/passwd")[0] == 400
+    assert request(server, "GET", "/api/datasets", headers={"Host": "evil.example"})[0] == 403
+    assert (
+        request(server, "POST", "/api/datasets", '{"name":"bad","csv":"a,a\\n1,2"}', headers)[0]
+        == 400
+    )
+    assert request(server, "POST", "/api/datasets", "[]", headers)[0] == 400
+    assert request(server, "GET", "/datasets.html")[0] == 200
+    out = tmp_path / "export"
+    build_site(config.database, out)
+    page = (out / "datasets.html").read_text()
+    assert "Datasets stay on your machine" in page
+    assert "dataset-root" not in page and "trial.csv" not in page
+    assert not list(out.rglob("*.sqlite3"))
+    assert (
+        request(
+            server,
+            "DELETE",
+            "/api/datasets?id=" + item["id"],
+            headers={"Origin": "https://evil.example"},
+        )[0]
+        == 403
+    )
+    assert request(server, "DELETE", "/api/datasets?id=" + item["id"])[0] == 200
+    assert request(server, "GET", "/api/datasets?id=" + item["id"])[0] == 404
+
+
+def test_dataset_csv_validation_and_empty_reads(tmp_path):
+    from llm_updates.web.datasets import DatasetStore, validate_csv
+
+    store = DatasetStore(str(tmp_path / "new.sqlite3"))
+    assert store.list() == []
+    assert not store.path.exists()
+    assert validate_csv('name,value\n"a,b",1\n"two\nlines",2') == (2, 2)
+    for text in ("a,a\n1,2", "a,b\n1", 'a,b\n"unclosed,2', "a,b", "a,b\n" + "1,2\n" * 10001):
+        with pytest.raises(ValueError):
+            validate_csv(text)
+    with pytest.raises(ValueError):
+        validate_csv("x" * 2_000_001)

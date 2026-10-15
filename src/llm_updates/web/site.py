@@ -14,7 +14,7 @@ def build_site(database: str, out) -> dict:
     out = Path(out)
     written = []
     with reader(database) as repo:
-        names = ["index.html", *LEARN]
+        names = ["index.html", "datasets.html", *LEARN]
         names += [digest_page(d["digest_id"]) for d in digest_summaries(repo)]
         for name in names:
             atomic_write(out / name, render(repo, name, interactive=False))
