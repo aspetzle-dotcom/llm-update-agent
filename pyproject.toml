@@ -19,7 +19,9 @@ dev = ["pytest==9.1.1", "ruff==0.17.0"]
 llm-updates = "llm_updates.cli:main"
 
 [tool.setuptools.package-data]
-llm_updates = ["storage/*.sql", "defaults/*.toml"]
+llm_updates = [
+  "storage/*.sql", "defaults/*.toml", "web/static/*", "web/content/*.html",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

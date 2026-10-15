@@ -63,6 +63,11 @@ def parser():
     ev.add_argument("--dataset", required=True, type=Path)
     ev.add_argument("--mode", choices=("baseline", "newest", "keyword-recency"), default="baseline")
     commands.add_parser("status")
+    serve = commands.add_parser("serve", help="Browse digests and ML guides in a local web app")
+    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--verbose", action="store_true", help="Log each request")
+    site = commands.add_parser("site", help="Export a static, read-only website")
+    site.add_argument("--out", type=Path, help="Output folder (default: data/site)")
     return p
 
 
@@ -103,6 +108,16 @@ def main(argv=None):
         config = load(args.config, getattr(args, "profile", None))
         if args.command == "evaluate":
             print(json.dumps(evaluate(args.dataset, config, args.mode), indent=2))
+            return 0
+        if args.command == "serve":
+            from .web.server import serve
+
+            return serve(config.database, args.port, args.verbose)
+        if args.command == "site":
+            from .web.site import build_site
+
+            out = args.out or Path(config.output_dir).parent / "site"
+            print(dumps(build_site(config.database, out)))
             return 0
         with database_lock(config.database):
             repo = Repository(config.database)
