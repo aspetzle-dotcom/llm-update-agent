@@ -19,6 +19,7 @@ from ..util import clean
 PAGES = (
     ("index.html", "Updates"),
     ("datasets.html", "Datasets & tools"),
+    ("forecasting.html", "Forecasting"),
     ("classical-ml.html", "Classical ML"),
     ("deep-learning.html", "Deep learning"),
     ("llms.html", "LLMs"),
@@ -27,7 +28,9 @@ LEARN = {
     "classical-ml.html": ("Classical ML", "classical-ml"),
     "deep-learning.html": ("Deep learning", "deep-learning"),
     "llms.html": ("LLMs", "llms"),
+    "forecasting.html": ("Forecasting", "forecasting"),
 }
+SCRIPTS = {"forecasting.html": ("forecast.js", "dashboard.js")}
 LABELS = (("useful", "Useful"), ("already_knew", "Already knew"), ("skip", "Skip"))
 DIGEST_ID = re.compile(r"^digest_[0-9a-f]{8,64}$")
 
@@ -158,7 +161,7 @@ def layout(title: str, active: str, body: str, interactive: bool, scripts=()) ->
 def learn_page(name: str, interactive: bool) -> str:
     title, slug = LEARN[name]
     content = files("llm_updates").joinpath(f"web/content/{slug}.html").read_text(encoding="utf-8")
-    return layout(title, name, content, interactive, scripts=("viz.js",))
+    return layout(title, name, content, interactive, scripts=SCRIPTS.get(name, ("viz.js",)))
 
 
 # Updates ---------------------------------------------------------------------------------

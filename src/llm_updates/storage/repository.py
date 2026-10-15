@@ -19,7 +19,7 @@ class Repository:
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA journal_mode=WAL")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 3:
+        if version > 4:
             raise ValueError("database schema is newer than this application")
         if version == 0:
             sql = Path(__file__).with_name("001_initial.sql").read_text(encoding="utf-8")
@@ -32,6 +32,9 @@ class Repository:
         if version < 3:
             sql = Path(__file__).with_name("003_collection_state.sql").read_text(encoding="utf-8")
             self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=3;\nCOMMIT;")
+        if version < 4:
+            sql = Path(__file__).with_name("004_forecast_projects.sql").read_text(encoding="utf-8")
+            self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nPRAGMA user_version=4;\nCOMMIT;")
 
     def close(self):
         self.db.close()
@@ -455,3 +458,38 @@ class Repository:
                     (uid("profile", version, settings), version, settings, now()),
                 )
         return profile
+
+    def projects(self):
+        return self.all(
+            """SELECT project_id,name,created_at,updated_at,json_array_length(data_json,'$.values')
+            AS points FROM forecast_projects ORDER BY updated_at DESC, rowid DESC"""
+        )
+
+    def project(self, project_id):
+        row = self.one("SELECT * FROM forecast_projects WHERE project_id=?", (project_id,))
+        if not row:
+            return None
+        for name in ("data", "settings", "summary"):
+            row[name] = json.loads(row.pop(name + "_json"))
+        return row
+
+    def save_project(self, project_id, name, data, settings, summary):
+        """Create a project, or replace one that exists; returns its id."""
+        stamp = now()
+        project_id = project_id or "project_" + uuid.uuid4().hex
+        with self.transaction():
+            self.db.execute(
+                """INSERT INTO forecast_projects VALUES(?,?,?,?,?,?,?)
+                ON CONFLICT(project_id) DO UPDATE SET name=excluded.name,
+                data_json=excluded.data_json, settings_json=excluded.settings_json,
+                summary_json=excluded.summary_json, updated_at=excluded.updated_at""",
+                (project_id, name, dumps(data), dumps(settings), dumps(summary), stamp, stamp),
+            )
+        return project_id
+
+    def delete_project(self, project_id):
+        with self.transaction():
+            cursor = self.db.execute(
+                "DELETE FROM forecast_projects WHERE project_id=?", (project_id,)
+            )
+        return cursor.rowcount > 0

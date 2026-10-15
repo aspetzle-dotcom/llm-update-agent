@@ -140,7 +140,7 @@ def test_schema_two_upgrade_preserves_evidence_and_restarts_unsafe_cursors(tmp_p
     db.commit()
     db.close()
     repo = Repository(str(path))
-    assert repo.db.execute("PRAGMA user_version").fetchone()[0] == 3
+    assert repo.db.execute("PRAGMA user_version").fetchone()[0] == 4
     assert repo.one("SELECT * FROM current_versions") == {"item_id": "i", "version_id": "v"}
     assert repo.one("SELECT passage_text FROM evidence")["passage_text"] == "Text"
     state = repo.one("SELECT * FROM source_runs")

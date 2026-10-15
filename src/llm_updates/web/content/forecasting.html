@@ -1,0 +1,122 @@
+<section class="hero">
+  <p class="eyebrow">Consulting toolkit</p>
+  <h1>Forecasting</h1>
+  <p class="lede">Load a time series, see which forecasting method would have predicted your own history best, then test what-if scenarios. Your data never leaves this computer.</p>
+</section>
+
+<div class="dash">
+  <aside class="dash-side">
+    <section class="card panel">
+      <h2>1 · Data</h2>
+      <div class="segmented" role="tablist" aria-label="Data source">
+        <button type="button" role="tab" data-source="sample" aria-selected="true">Sample</button>
+        <button type="button" role="tab" data-source="upload" aria-selected="false">Upload</button>
+        <button type="button" role="tab" data-source="paste" aria-selected="false">Paste</button>
+      </div>
+      <div class="pane" data-pane="sample">
+        <label class="field">Dataset <select id="fc-sample"></select></label>
+      </div>
+      <div class="pane" data-pane="upload" hidden>
+        <label class="drop" id="fc-drop">
+          <input type="file" id="fc-file" accept=".csv,.tsv,.txt,text/csv,text/plain">
+          <strong>Drop a CSV here</strong>
+          <span>or click to choose a file</span>
+          <small>Needs a date column and at least one number column. Export from Excel with “Save as CSV”.</small>
+        </label>
+      </div>
+      <div class="pane" data-pane="paste" hidden>
+        <textarea id="fc-paste" rows="7" spellcheck="false" aria-label="Pasted data" placeholder="date,sales&#10;2024-01,120&#10;2024-02,135&#10;2024-03,128"></textarea>
+        <button type="button" class="btn" id="fc-paste-go">Use pasted data</button>
+      </div>
+      <div class="field-row">
+        <label class="field">Date column <select id="fc-date-col"></select></label>
+        <label class="field">Value to forecast <select id="fc-value-col"></select></label>
+      </div>
+      <p class="muted small" id="fc-data-info"></p>
+      <ul class="warnings" id="fc-warnings"></ul>
+    </section>
+
+    <section class="card panel">
+      <h2>2 · Forecast</h2>
+      <label class="field">Periods ahead <span class="range"><input type="range" id="fc-horizon" min="1" max="60" value="12"><output id="fc-horizon-out">12</output></span></label>
+      <label class="field">Seasonal cycle <select id="fc-season"></select></label>
+      <label class="field">Model <select id="fc-model"></select></label>
+      <label class="field">Range shown <select id="fc-band">
+        <option value="both">80% and 95% ranges</option>
+        <option value="80">80% range</option>
+        <option value="95">95% range</option>
+        <option value="none">No range</option>
+      </select></label>
+    </section>
+
+    <section class="card panel">
+      <h2>3 · Scenario</h2>
+      <p class="muted small">Adjust the chosen forecast. The original stays visible as a dashed line.</p>
+      <label class="field">Extra growth per year <span class="range"><input type="range" id="fc-growth" min="-30" max="30" value="0"><output id="fc-growth-out">0%</output></span></label>
+      <label class="field">One-off change <span class="range"><input type="range" id="fc-shock" min="-50" max="50" value="0"><output id="fc-shock-out">0%</output></span></label>
+      <label class="field">Starting in period <span class="range"><input type="range" id="fc-shock-start" min="1" max="12" value="1"><output id="fc-shock-start-out">1</output></span></label>
+      <label class="field">Lasting <span class="range"><input type="range" id="fc-shock-length" min="0" max="12" value="0"><output id="fc-shock-length-out">rest</output></span></label>
+      <button type="button" class="btn" id="fc-scenario-reset">Reset scenario</button>
+    </section>
+
+    <section class="card panel live-only">
+      <h2>Projects</h2>
+      <div class="field-row field-row-tight">
+        <input type="text" id="fc-name" maxlength="120" placeholder="Client or project name" aria-label="Project name">
+        <button type="button" class="btn btn-primary" id="fc-save">Save</button>
+      </div>
+      <p class="muted small">Saved in this app's local database with the current settings.</p>
+      <ul class="project-list" id="fc-projects"></ul>
+    </section>
+  </aside>
+
+  <section class="dash-main" aria-live="polite">
+    <header class="report-head print-only">
+      <h1 id="fc-report-title">Forecast</h1>
+      <p id="fc-report-sub"></p>
+    </header>
+    <div class="stats" id="fc-kpis"></div>
+
+    <figure class="card chart-card">
+      <figcaption class="chart-head">
+        <h2 id="fc-chart-title">Forecast</h2>
+        <div class="chart-toggles">
+          <label><input type="checkbox" id="fc-show-backtest" checked> Backtest</label>
+          <label><input type="checkbox" id="fc-show-fitted"> Model fit</label>
+        </div>
+      </figcaption>
+      <canvas id="fc-chart" aria-label="Forecast chart"></canvas>
+      <div class="legend" id="fc-legend"></div>
+      <div class="readout" id="fc-hover">Hover the chart to read values.</div>
+    </figure>
+
+    <section class="card panel">
+      <h2>Model comparison</h2>
+      <p class="muted small" id="fc-models-note"></p>
+      <div class="table-wrap"><table class="data-table selectable" id="fc-models"></table></div>
+    </section>
+
+    <section class="card panel">
+      <div class="panel-head">
+        <h2>Forecast table</h2>
+        <div class="panel-actions no-print">
+          <button type="button" class="btn" id="fc-export">Download CSV</button>
+          <button type="button" class="btn" id="fc-print">Print report</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="data-table" id="fc-table"></table></div>
+    </section>
+
+    <section class="card panel no-print">
+      <h2>How to read this</h2>
+      <ul class="small">
+        <li><strong>Backtest:</strong> each model is trained without the most recent periods, then asked to predict them. That is the fairest test of how it will do on the future.</li>
+        <li><strong>Typical % error (MAPE):</strong> the average miss as a percentage of the actual value. “±6%” means forecasts were usually within about 6%.</li>
+        <li><strong>MAE / RMSE:</strong> the average miss in your own units; RMSE punishes big misses more.</li>
+        <li><strong>Bias:</strong> positive means the model tended to over-forecast; negative, under-forecast.</li>
+        <li><strong>Ranges:</strong> the shaded bands show where the actual value is likely to land 80% or 95% of the time, if the future behaves like the past. They are approximations and widen further out.</li>
+        <li><strong>Limits:</strong> these are statistical models of history. They cannot know about launches, price changes or market shocks unless you add them as a scenario.</li>
+      </ul>
+    </section>
+  </section>
+</div>
