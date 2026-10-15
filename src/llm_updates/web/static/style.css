@@ -376,3 +376,22 @@ body[data-mode="static"] .live-only { display: none; }
   .stats { grid-template-columns: repeat(4, 1fr); }
   .wrap { max-width: none; padding: 0; }
 }
+
+/* Earlier digests feed on the Updates page */
+.stories-column { display: grid; gap: 16px; min-width: 0; }
+.feed { display: grid; gap: 14px; margin-top: 20px; }
+.feed-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; margin: 8px 0 0; }
+.digest-block { padding: 18px 22px; }
+.digest-block[hidden] { display: none; }
+.digest-block-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.digest-block-head h3 { margin: 0 0 2px; font-size: 1.05rem; }
+.digest-block-head a { white-space: nowrap; }
+.compact-stories { list-style: none; padding: 0; margin: 0; }
+.compact-stories li { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.compact-stories li:last-child { border-bottom: 0; padding-bottom: 0; }
+.compact-title { font-weight: 650; color: var(--text); text-decoration: none; }
+.compact-title:hover { color: var(--accent-text); text-decoration: underline; }
+.compact-stories .story-meta { margin-top: 2px; }
+.compact-stories .tag { font-size: 0.72rem; padding: 1px 7px; margin-left: 2px; }
+.compact-stories p { margin: 6px 0 0; font-size: 0.92rem; color: var(--muted); }
+.feed-more { justify-self: center; }

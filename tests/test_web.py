@@ -236,3 +236,34 @@ def test_dataset_csv_validation_and_empty_reads(tmp_path):
             validate_csv(text)
     with pytest.raises(ValueError):
         validate_csv("x" * 2_000_001)
+
+
+def test_front_page_lists_earlier_digests(repo, config, fixture_path, published):
+    from llm_updates.web.pages import FEED_VISIBLE
+
+    windows = [
+        ("2026-09-02T00:00:00+00:00", "2026-09-09T00:00:00+00:00"),
+        ("2026-09-09T00:00:00+00:00", "2026-09-16T00:00:00+00:00"),
+        ("2026-09-16T00:00:00+00:00", "2026-09-23T00:00:00+00:00"),
+        ("2026-09-23T00:00:00+00:00", "2026-09-30T00:00:00+00:00"),
+    ]
+    for since, until in windows:
+        Coordinator(repo, config).run(since, until, fixture=fixture_path, key="feed")
+    page = render(repo, "index.html", interactive=True)
+    latest = repo.one("SELECT digest_id FROM digests ORDER BY created_at DESC, rowid DESC LIMIT 1")
+    others = [r["digest_id"] for r in repo.all("SELECT digest_id FROM digests")]
+    assert page.count('class="card digest-block"') == len(others) - 1
+    assert page.count("data-older hidden") == len(others) - 1 - FEED_VISIBLE
+    assert "Show older digests" in page and "Earlier digests" in page
+    for digest_id in others:
+        if digest_id != latest["digest_id"]:
+            assert f'href="{digest_id}.html"' in page
+    single = render(repo, published["digest_id"] + ".html", interactive=True)
+    assert "Earlier digests" not in single
+
+
+def test_digest_size_limit_is_ten(repo, config, fixture_path):
+    with pytest.raises(ValueError):
+        Coordinator(repo, config).run(SINCE, UNTIL, fixture=fixture_path, top=11)
+    result, _ = Coordinator(repo, config).run(SINCE, UNTIL, fixture=fixture_path, top=3, key="t3")
+    assert len(result["entries"]) == 3

@@ -96,6 +96,7 @@ def digest_summaries(repo) -> list[dict]:
             window=payload.get("window", {}),
             count=len(payload.get("entries", [])),
             topics=[t for e in payload.get("entries", []) for t in e.get("topics", [])],
+            entries=payload.get("entries", []),
         )
         result.append(row)
     return result
@@ -306,6 +307,57 @@ llm-updates --config demo.toml serve</code></pre>
 </div>"""
 
 
+FEED_VISIBLE = 3  # earlier digests shown before "Show older digests"
+FEED_LIMIT = 30  # earlier digests rendered on the front page; the rest stay in the archive
+
+
+def _excerpt(text, limit=240) -> str:
+    # Release notes are Markdown; heading marks read as noise in a one-line preview.
+    text = " ".join(re.sub(r"(^|\s)#{1,6}\s+", " ", str(text or "")).split())
+    return text if len(text) <= limit else text[: limit - 1].rsplit(" ", 1)[0] + "…"
+
+
+def _feed(summaries, current_id) -> str:
+    """Earlier digests as compact story lists, newest first."""
+    older = [d for d in summaries if d["digest_id"] != current_id][:FEED_LIMIT]
+    if not older:
+        return ""
+    blocks = []
+    for i, d in enumerate(older):
+        items = "".join(
+            f"""<li>
+  <a class="compact-title" href="{href(e.get("url"))}" target="_blank" rel="noopener noreferrer">{esc(e.get("title"))}</a>
+  <div class="story-meta">{nice_date(e.get("date"))} · {esc(e.get("content_scope"))}{"".join(f' <span class="tag">{esc(t)}</span>' for t in e.get("topics", [])[:3])}</div>
+  <p>{esc(_excerpt(e.get("what_changed")))}</p>
+</li>"""
+            for e in d["entries"]
+        )
+        if not items:
+            items = '<li class="muted">No stories cleared the filters for this window.</li>'
+        hidden = " hidden" if i >= FEED_VISIBLE else ""
+        blocks.append(
+            f"""<section class="card digest-block" data-older{hidden}>
+  <header class="digest-block-head">
+    <div><h3>{window_label(d["window"])}</h3>
+    <span class="muted small">{d["count"]} stories · {esc(d["status"])}</span></div>
+    <a class="small" href="{digest_page(d["digest_id"])}">Open digest →</a>
+  </header>
+  <ol class="compact-stories">{items}</ol>
+</section>"""
+        )
+    more = ""
+    if len(older) > FEED_VISIBLE:
+        more = (
+            '<button type="button" class="btn feed-more" data-step="3">'
+            f"Show older digests ({len(older) - FEED_VISIBLE} more)</button>"
+        )
+    return f"""<section class="feed" aria-labelledby="feed-title">
+  <h2 id="feed-title" class="feed-title">Earlier digests</h2>
+  {"".join(blocks)}
+  {more}
+</section>"""
+
+
 def updates_page(summaries, payload, labels, interactive) -> str:
     if payload is None:
         return layout("Updates", "index.html", EMPTY, interactive)
@@ -331,7 +383,7 @@ def updates_page(summaries, payload, labels, interactive) -> str:
   <p class="eyebrow">{window_label(payload.get("window", {}))}</p>
   <h1>{heading}</h1>
   <p class="news-kicker">What’s changing. <em>Why it matters.</em></p>
-  <p class="lede">Up to five stories, ranked by relevance, recency and novelty across your sources.
+  <p class="lede">Up to ten stories, ranked by relevance, recency and novelty across your sources.
   Every excerpt is quoted from the linked source.</p>
   <div class="badges">
     <span class="badge status-{esc(status)}">{esc(status)}</span>
@@ -346,7 +398,10 @@ def updates_page(summaries, payload, labels, interactive) -> str:
   <div class="stat"><span class="stat-value">${float(cost.get("accounted_usd") or 0):.2f}</span><span class="stat-label">model cost</span></div>
 </div>
 <div class="updates-grid">
-  <section class="stories" aria-label="Stories">{cards}</section>
+  <div class="stories-column">
+    <section class="stories" aria-label="Stories">{cards}</section>
+    {_feed(summaries, payload["digest_id"]) if latest else ""}
+  </div>
   <aside class="sidebar">
     <section class="card panel">
       <h2>Sources</h2>

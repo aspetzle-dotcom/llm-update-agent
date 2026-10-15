@@ -6,7 +6,7 @@ import time
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from .models import ModelResult, ToolRequest
+from .models import MAX_ENTRIES, ModelResult, ToolRequest
 from .providers import strict_schema
 from .util import dumps, now, sha, uid
 from .validation import validate_draft
@@ -271,7 +271,7 @@ def execute_tool(tool: ToolRequest, candidates, repo, rid):
     return result
 
 
-def research(repo, rid, config, candidates, provider, deadline, top=5):
+def research(repo, rid, config, candidates, provider, deadline, top=MAX_ENTRIES):
     budget = Budget(repo, rid, config, deadline)
     recent, seen = [], set()
     no_progress, tools_used = 0, 0

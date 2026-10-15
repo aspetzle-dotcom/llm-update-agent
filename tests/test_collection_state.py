@@ -140,11 +140,48 @@ def test_schema_two_upgrade_preserves_evidence_and_restarts_unsafe_cursors(tmp_p
     db.commit()
     db.close()
     repo = Repository(str(path))
-    assert repo.db.execute("PRAGMA user_version").fetchone()[0] == 4
+    assert repo.db.execute("PRAGMA user_version").fetchone()[0] == 5
     assert repo.one("SELECT * FROM current_versions") == {"item_id": "i", "version_id": "v"}
     assert repo.one("SELECT passage_text FROM evidence")["passage_text"] == "Text"
     state = repo.one("SELECT * FROM source_runs")
     assert state["cursor_after"] is None and state["fetched_count"] == 0
     assert state["status"] == "pending"
     assert repo.one("SELECT last_success_at FROM sources")["last_success_at"] is None
+    repo.close()
+
+
+def test_schema_four_upgrade_keeps_digest_entries_and_links(tmp_path):
+    import llm_updates.storage
+
+    folder = Path(llm_updates.storage.__file__).parent
+    path = tmp_path / "v4.sqlite3"
+    db = sqlite3.connect(path)
+    db.execute("PRAGMA foreign_keys=ON")
+    for name in sorted(folder.glob("00[1-4]_*.sql")):
+        db.executescript(name.read_text())
+    db.execute("PRAGMA user_version=4")
+    db.execute(
+        "INSERT INTO runs VALUES('r','key',NULL,'2026-10-15',NULL,'succeeded','done','','','','1','{}','{}','{}',1)"
+    )
+    db.execute("INSERT INTO stories VALUES('s','Story','2026-10-15')")
+    db.execute("INSERT INTO digests VALUES('d','r','succeeded','{}','2026-10-15')")
+    db.execute("INSERT INTO digest_entries VALUES('e','d','s',5,'{}')")
+    db.execute("INSERT INTO claims VALUES('c','e','text','source_fact','exact_excerpt')")
+    db.execute("INSERT INTO feedback VALUES('f','e','useful',NULL,'2026-10-15')")
+    db.commit()
+    db.close()
+
+    repo = Repository(str(path))
+    assert repo.db.execute("PRAGMA user_version").fetchone()[0] == 5
+    assert repo.db.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+    assert repo.one("SELECT position FROM digest_entries WHERE entry_id='e'")["position"] == 5
+    assert repo.one("SELECT label FROM feedback JOIN digest_entries USING(entry_id)")
+    assert repo.one("SELECT text FROM claims JOIN digest_entries USING(entry_id)")
+    for n in (2, 10):
+        repo.db.execute(f"INSERT INTO stories VALUES('s{n}','Story','2026-10-15')")
+    repo.db.execute("INSERT INTO digest_entries VALUES('e10','d','s10',10,'{}')")
+    with pytest.raises(sqlite3.IntegrityError):
+        repo.db.execute("INSERT INTO digest_entries VALUES('e11','d','s2',11,'{}')")
+    with pytest.raises(sqlite3.IntegrityError):
+        repo.db.execute("INSERT INTO digest_entries VALUES('e12','d','missing',3,'{}')")
     repo.close()

@@ -1,6 +1,6 @@
 # Personal LLM update agent
 
-A working local Python CLI that collects a configured set of sources, stores immutable evidence, and writes an auditable digest of up to five stories. The deterministic baseline works without an API key. The OpenAI research layer is opt-in and experimental.
+A working local Python CLI that collects a configured set of sources, stores immutable evidence, and writes an auditable digest of up to ten stories. The deterministic baseline works without an API key. The OpenAI research layer is opt-in and experimental.
 
 ## Try the offline demo
 
@@ -19,7 +19,7 @@ llm-updates --config demo.toml run --fixture fixtures/demo.jsonl --since 2026-10
 
 On macOS or Linux, use `python3 -m venv .venv` and `source .venv/bin/activate` for the first two steps. For a smaller baseline-only install, use `python -m pip install -e .` instead of the two installation commands above.
 
-The demo has **20 original synthetic observations, 18 logical items, and five selected entries**. It makes no network or model calls. Run the same command again: it returns the same committed digest and adds no versions or entries. An example is saved in [examples/demo.md](examples/demo.md), with machine-readable output in [examples/demo.json](examples/demo.json).
+The demo has **20 original synthetic observations, 18 logical items, and nine selected entries**. It makes no network or model calls. Run the same command again: it returns the same committed digest and adds no versions or entries. An example is saved in [examples/demo.md](examples/demo.md), with machine-readable output in [examples/demo.json](examples/demo.json).
 
 Demo data uses `data/demo.sqlite3`. Live data uses `data/updates.sqlite3`. Keep these separate: the fixture stories are fictional. The repository's example files contain only synthetic content.
 
@@ -72,7 +72,7 @@ All calculation runs in the browser, so the static site export works too. In `ll
 
 ```text
 llm-updates collect --since 2026-10-07 --until 2026-10-14
-llm-updates run --top 5 --profile profiles/default.toml
+llm-updates run --top 10 --profile profiles/default.toml
 llm-updates run --key intentional-second-invocation
 llm-updates run --refresh-of RUN_ID --key refresh-1
 llm-updates resume RUN_ID

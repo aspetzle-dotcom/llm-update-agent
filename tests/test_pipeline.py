@@ -26,8 +26,8 @@ def test_twenty_fixture_observations_are_idempotent(repo, config, fixture_path):
     second, _ = Coordinator(repo, config).run(SINCE, UNTIL, fixture=fixture_path)
     assert first == second and counts() == before
     assert before[:2] == [18, 18]
-    assert len(first["entries"]) == 5
-    assert len({e["story_id"] for e in first["entries"]}) == 5
+    assert len(first["entries"]) == 9  # up to ten; the rest miss the relevance threshold
+    assert len({e["story_id"] for e in first["entries"]}) == 9
     assert first["coverage"]["succeeded"] == 8
     assert path.endswith(".md")
     for ev in repo.all(

@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from .util import canonical_url, clean, date
 
+MAX_ENTRIES = 10  # stories per digest; matches the digest_entries position CHECK
+
 
 class Contract(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True, allow_inf_nan=False)
@@ -90,7 +92,7 @@ class DraftEntry(Contract):
 
 
 class DigestDraft(Contract):
-    entries: list[DraftEntry] = Field(max_length=5)
+    entries: list[DraftEntry] = Field(max_length=MAX_ENTRIES)
 
 
 class ToolRequest(Contract):
